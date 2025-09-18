@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Wi-Fi Heatmap — AP Model + RBF + Obstacles (Red→Green -90..-40 dBm)</title>
+<title>Wi-Fi Heatmap — Access Point Model + Obstacles (Red→Green -90..-40 dBm)</title>
 <style>
   :root{
     --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
@@ -42,13 +42,13 @@
   .muted{color:var(--muted)}
   .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#22284a;border:1px solid #2a3156}
   .small{font-size:12px}
-  .point,.apRow,.matRow{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#141a34;border:1px solid #2a3156;border-radius:10px;padding:6px 8px}
+  .apRow,.matRow{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#141a34;border:1px solid #2a3156;border-radius:10px;padding:6px 8px}
   .dot{width:10px;height:10px;border-radius:50%}
-  @media (max-width: 980px){ .container{grid-template-columns:1fr} }
+  @media (max-width:980px){ .container{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-<header><h1>📶 Wi-Fi Heatmap — AP Model + RBF + Obstacles (Red→Green)</h1></header>
+<header><h1>📶 Wi-Fi Heatmap — Access Point Model + Obstacles (Red→Green)</h1></header>
 
 <div class="container">
   <!-- Left control panel -->
@@ -67,11 +67,11 @@
         <button id="btnScale">🧭 ตั้งสเกล (ลาก 2 จุด)</button>
         <span class="chip">สเกลปัจจุบัน: <span id="scaleLabel">ยังไม่ตั้ง</span></span>
       </div>
-      <div class="small muted">ระบบ AP ต้องรู้ “เมตร” เพื่อคำนวณระยะจาก AP → จุดต่างๆ</div>
+      <div class="small muted">ต้องรู้อัตรา px/เมตร เพื่อคำนวณระยะจาก AP → ทุกพิกัด</div>
     </div>
 
     <div class="section">
-      <div class="label">3) วาง Access Point (แบบจำลองระยะทาง)</div>
+      <div class="label">3) วาง Access Point</div>
       <div class="grid">
         <div>
           <div class="label">ชื่อ/SSID</div>
@@ -92,31 +92,11 @@
         <button id="btnAPClear" class="danger">🗑️ ล้าง AP ทั้งหมด</button>
       </div>
       <div id="apList" style="margin-top:10px;display:grid;gap:6px;"></div>
-      <div class="small muted">หลาย AP ได้ — ระบบจะรวมกำลังสัญญาณ (mW) แล้วแปลงกลับเป็น dBm</div>
+      <div class="small muted">วางได้หลาย AP — ระบบรวมกำลัง (mW) แล้วแปลงเป็น dBm</div>
     </div>
 
     <div class="section">
-      <div class="label">4) จุดวัด RSSI (สำรอง—ใช้เมื่อไม่มี AP)</div>
-      <div class="grid">
-        <div>
-          <div class="label">Note</div>
-          <input type="text" id="ssidInput" placeholder="เช่น Remark จุดวัด" />
-        </div>
-        <div>
-          <div class="label">RSSI (dBm)</div>
-          <input type="number" id="rssiInput" value="-60" step="1" />
-        </div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button id="btnPoint">📍 โหมดเพิ่มจุด</button>
-        <button id="btnUndo" class="ghost">↩️ ลบจุดล่าสุด</button>
-        <button id="btnClearPts" class="danger">🗑️ ล้างทุกจุด</button>
-      </div>
-      <div id="pointList" style="margin-top:10px;display:grid;gap:6px;"></div>
-    </div>
-
-    <div class="section">
-      <div class="label">5) วัสดุ/สิ่งกีดขวาง (ลากเส้น)</div>
+      <div class="label">4) วัสดุ/สิ่งกีดขวาง (ลากเส้น)</div>
       <div class="grid">
         <div>
           <div class="label">ชนิดวัสดุ</div>
@@ -136,7 +116,7 @@
     </div>
 
     <div class="section">
-      <div class="label">6) ตั้งค่าเรนเดอร์</div>
+      <div class="label">5) ตั้งค่าเรนเดอร์</div>
       <div class="grid">
         <div>
           <div class="label">Grid step (px)</div>
@@ -145,10 +125,6 @@
         <div>
           <div class="label">โปร่งใสฮีตแมป</div>
           <input type="number" id="alpha" value="0.6" min="0" max="1" step="0.05" />
-        </div>
-        <div>
-          <div class="label">RBF epsilon (px⁻¹) <span class="muted small">(ใช้เมื่อไม่มี AP)</span></div>
-          <input type="number" id="epsilon" value="0.01" step="0.005" />
         </div>
       </div>
       <div class="row" style="margin-top:10px">
@@ -163,7 +139,7 @@
     </div>
 
     <div class="section">
-      <div class="label">7) บันทึก/โหลดโปรเจกต์</div>
+      <div class="label">6) บันทึก/โหลดโปรเจกต์</div>
       <div class="row">
         <button id="btnSave">💾 Save JSON</button>
         <input type="file" id="loadJson" accept="application/json" />
@@ -171,7 +147,7 @@
     </div>
 
     <div class="section small muted">
-      คีย์ลัด: <span class="kbd">S</span> สเกล • <span class="kbd">A</span> วาง AP • <span class="kbd">P</span> จุดวัด • <span class="kbd">W</span> วัสดุ • <span class="kbd">H</span> เรนเดอร์ • <span class="kbd">Z</span> ลบจุดล่าสุด
+      คีย์ลัด: <span class="kbd">S</span> สเกล • <span class="kbd">A</span> วาง AP • <span class="kbd">W</span> วัสดุ • <span class="kbd">H</span> เรนเดอร์
     </div>
   </aside>
 
@@ -182,7 +158,6 @@
       <span class="muted small">ลำดับ: อัปโหลดภาพ → ตั้งสเกล → วาง AP → วาดวัสดุ → เรนเดอร์</span>
     </div>
     <canvas id="canvas" width="1280" height="800"></canvas>
-    <div class="small muted">หมายเหตุ: ถ้าไม่ได้วาง AP ระบบจะถอยไปใช้ RBF จากจุดวัด</div>
   </main>
 </div>
 
@@ -234,9 +209,8 @@ const ctx = canvas.getContext('2d', { willReadFrequently:true });
 
 let floorImg = null;
 let aps = [];       // {x,y,label,p0,n}
-let points = [];    // {x,y,rssi,label}
 let segments = [];  // {a:{x,y}, b:{x,y}, type, att}
-let mode = 'idle';  // 'scale'|'ap'|'add'|'mat'
+let mode = 'idle';  // 'scale'|'ap'|'mat'
 let scale = { pxPerMeter: null };
 let tempLine = null;
 
@@ -244,8 +218,7 @@ const UI = {
   scaleLabel: $('#scaleLabel'),
   modeBadge: $('#modeBadge'),
   apList: $('#apList'),
-  pointList: $('#pointList'),
-  matList:   $('#matList'),
+  matList: $('#matList'),
   legendMin: $('#legendMin'),
   legendMax: $('#legendMax'),
 };
@@ -288,18 +261,8 @@ function drawAll(){
     ctx.fillText(`${Lpx.toFixed(1)} px`, tempLine.b.x+8, tempLine.b.y-6);
   }
 
-  // จุดวัด
-  points.forEach(p=> drawPoint(p));
-
   // APs
   aps.forEach(a=> drawAP(a));
-}
-function drawPoint(p){
-  ctx.shadowColor='#0008'; ctx.shadowBlur=8; ctx.fillStyle='#7cff9b';
-  ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
-  ctx.strokeStyle='#1b8a5f'; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillStyle='#e8ecf1'; ctx.font='12px ui-monospace,monospace';
-  ctx.fillText(`${p.rssi} dBm${p.label?` · ${p.label}`:''}`, p.x+10, p.y-8);
 }
 function drawAP(a){
   ctx.fillStyle = '#8fd3ff';
@@ -320,7 +283,7 @@ function makeFixedLegend(){
   g.style.backgroundImage = `url(${cvs.toDataURL()})`;
 }
 function colorFromRSSI(v){
-  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1); // -90→0(red), -40→1(green)
+  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1); // -90→0 (แดง), -40→1 (เขียว)
   const r = Math.round(255*(1-t));
   const g = Math.round(255*t);
   return [r,g,0];
@@ -346,8 +309,8 @@ function pathObstacleLoss(pFrom, pTo){
   return loss;
 }
 
-/* ========= Models ========= */
-// AP model: RSSI(d) = P0 - 10*n*log10(d/1m) - obstacleLoss
+/* ========= AP Model ========= */
+// RSSI(d) = P0 - 10*n*log10(d/1m) - obstacleLoss
 function rssiFromAPs(x,y){
   if(!aps.length) return null;
   if(!scale.pxPerMeter){ alert('โปรดตั้งสเกลก่อน (จำเป็นสำหรับ AP)'); throw new Error('no-scale'); }
@@ -358,35 +321,18 @@ function rssiFromAPs(x,y){
     const d_m = Math.max(1e-3, d_px / scale.pxPerMeter); // เมตร
     const lossObs = pathObstacleLoss(P, a);               // dB จากวัสดุ
     const rssi = a.p0 - 10*a.n*Math.log10(d_m/1.0) - lossObs;
-    const mW = Math.pow(10, rssi/10);
-    sum_mW += mW;
+    sum_mW += Math.pow(10, rssi/10);
   }
-  const rssi_total = 10 * Math.log10(Math.max(1e-15, sum_mW));
-  return rssi_total;
-}
-
-// RBF (fallback if no AP)
-function rbfKernel(r, eps){ return Math.exp(- (eps*eps) * r*r); }
-function rbfPredict(x,y, pts, eps){
-  let num=0, den=0; const P={x,y};
-  for(const p of pts){
-    const r = Math.hypot(x-p.x, y-p.y);
-    const w = rbfKernel(r, eps);
-    const att = pathObstacleLoss(P, p);
-    const localRssi = p.rssi - att;
-    num += w * localRssi; den += w;
-  }
-  return num / Math.max(1e-12, den);
+  return 10 * Math.log10(Math.max(1e-15, sum_mW));
 }
 
 /* ========= Heatmap render ========= */
 function renderHeatmap(){
   if(!floorImg){ alert('โปรดอัปโหลดภาพแปลนก่อน'); return; }
-  if(aps.length===0 && points.length<2){ alert('วาง AP อย่างน้อย 1 ตัว หรือมีจุดวัด ≥ 2 จุด'); return; }
+  if(aps.length===0){ alert('กรุณาวาง AP อย่างน้อย 1 ตัว'); return; }
 
   const gridStep = parseInt($('#gridStep').value||'6',10);
   const alpha = clamp(parseFloat($('#alpha').value||'0.6'),0,1);
-  const eps = parseFloat($('#epsilon').value||'0.01');
 
   UI.legendMin.textContent = RSSI_MIN;
   UI.legendMax.textContent = RSSI_MAX;
@@ -399,12 +345,7 @@ function renderHeatmap(){
 
   for(let y=0; y<canvas.height; y+=block){
     for(let x=0; x<canvas.width; x+=block){
-      let val;
-      if(aps.length>0){
-        val = rssiFromAPs(x,y); // อิงระยะจาก AP เป็นหลัก
-      }else{
-        val = rbfPredict(x,y,points,eps); // ถอยไปใช้ RBF จากจุดวัด
-      }
+      const val = rssiFromAPs(x,y); // อิงระยะจาก AP
       const [r,g,b] = colorFromRSSI(val);
 
       for(let yy=0; yy<block; yy++){
@@ -422,7 +363,6 @@ function renderHeatmap(){
     }
   }
   ctx.putImageData(imgData,0,0);
-  points.forEach(p=> drawPoint(p));
   aps.forEach(a=> drawAP(a));
 }
 
@@ -435,7 +375,7 @@ function refreshAPList(){
     const row = document.createElement('div'); row.className='apRow small';
     row.innerHTML = `
       <div>
-        <strong>${a.label||'AP'}</strong> · P0:${a.p0} dBm · n:${a.n}
+        <strong>${escapeHtml(a.label||'AP')}</strong> · P0:${a.p0} dBm · n:${a.n}
         <div class="muted">(${a.x|0},${a.y|0})</div>
       </div>
       <div class="row">
@@ -446,22 +386,6 @@ function refreshAPList(){
       drawAll(); refreshAPList();
     };
     UI.apList.appendChild(row);
-  });
-}
-
-function refreshPointList(){
-  UI.pointList.innerHTML = '';
-  points.forEach((p,i)=>{
-    const el = document.createElement('div');
-    el.className='point small';
-    el.innerHTML = `<div><strong>${p.rssi} dBm</strong> · ${p.label?escapeHtml(p.label):'<span class="muted">—</span>'}
-                    <div class="muted">(${p.x|0}, ${p.y|0})</div></div>
-                    <div><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
-    el.querySelector('button').onclick = e=>{
-      points.splice(+e.target.getAttribute('data-i'),1);
-      drawAll(); refreshPointList();
-    };
-    UI.pointList.appendChild(el);
   });
 }
 
@@ -492,7 +416,7 @@ function setMode(m){
   mode = m;
   UI.modeBadge.textContent = `โหมด: ${
     m==='idle'?'ปกติ': m==='scale'?'ตั้งสเกล (คลิก 2 จุด)':
-    m==='ap'?'วาง AP': m==='add'?'เพิ่มจุด RSSI':'ลากวัสดุ (คลิก-ลาก 2 จุด)'}`;
+    m==='ap'?'วาง AP':'ลากวัสดุ (คลิก-ลาก 2 จุด)'}`
 }
 
 /* ========= Events ========= */
@@ -504,27 +428,23 @@ $('#fileInput').addEventListener('change', e=>{
     floorImg.width = img.width; floorImg.height = img.height;
     const c = floorImg.getContext('2d'); c.drawImage(img,0,0);
     fitCanvasToImage(img);
-    aps=[]; points=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
+    aps=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
     UI.scaleLabel.textContent='ยังไม่ตั้ง';
-    drawAll(); refreshAPList(); refreshPointList(); refreshMatList(); makeFixedLegend();
+    drawAll(); refreshAPList(); refreshMatList(); makeFixedLegend();
   };
   img.src = URL.createObjectURL(f);
 });
 $('#btnClear').onclick = ()=>{
-  floorImg=null; aps=[]; points=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
-  UI.scaleLabel.textContent='ยังไม่ตั้ง'; drawAll(); refreshAPList(); refreshPointList(); refreshMatList(); makeFixedLegend();
+  floorImg=null; aps=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
+  UI.scaleLabel.textContent='ยังไม่ตั้ง'; drawAll(); refreshAPList(); refreshMatList(); makeFixedLegend();
 };
 
 $('#btnScale').onclick = ()=> setMode('scale');
 $('#btnAP').onclick    = ()=> setMode('ap');
-$('#btnPoint').onclick = ()=> setMode('add');
 $('#btnMat').onclick   = ()=> setMode('mat');
 
 $('#btnAPUndo').onclick = ()=>{ aps.pop(); drawAll(); refreshAPList(); };
 $('#btnAPClear').onclick = ()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawAll(); refreshAPList(); } };
-
-$('#btnUndo').onclick = ()=>{ points.pop(); drawAll(); refreshPointList(); };
-$('#btnClearPts').onclick = ()=>{ if(confirm('ล้างจุดวัดทั้งหมด?')){ points=[]; drawAll(); refreshPointList(); } };
 
 $('#btnMatUndo').onclick = ()=>{ segments.pop(); drawAll(); refreshMatList(); };
 $('#btnMatClear').onclick = ()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawAll(); refreshMatList(); } };
@@ -534,13 +454,12 @@ $('#btnExport').onclick = ()=>{ const a=document.createElement('a'); a.download=
 
 $('#btnSave').onclick = ()=>{
   const payload = {
-    aps, points, segments,
+    aps, segments,
     gridStep: +($('#gridStep').value||6),
     alpha: +($('#alpha').value||0.6),
-    epsilon: +($('#epsilon').value||0.01),
     scale: scale.pxPerMeter
   };
-  download('heatmap_project_ap_rbf.json', JSON.stringify(payload,null,2));
+  download('heatmap_project_ap_only.json', JSON.stringify(payload,null,2));
 };
 $('#loadJson').addEventListener('change', e=>{
   const f = e.target.files[0]; if(!f) return;
@@ -549,14 +468,12 @@ $('#loadJson').addEventListener('change', e=>{
     try{
       const obj = JSON.parse(reader.result);
       aps      = obj.aps||[];
-      points   = obj.points||[];
       segments = obj.segments||[];
       $('#gridStep').value = obj.gridStep ?? 6;
       $('#alpha').value    = obj.alpha    ?? 0.6;
-      $('#epsilon').value  = obj.epsilon  ?? 0.01;
       scale.pxPerMeter = obj.scale || null;
       UI.scaleLabel.textContent = scale.pxPerMeter? `${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
-      drawAll(); refreshAPList(); refreshPointList(); refreshMatList(); makeFixedLegend();
+      drawAll(); refreshAPList(); refreshMatList(); makeFixedLegend();
     }catch(err){ alert('ไฟล์ JSON ไม่ถูกต้อง'); }
   };
   reader.readAsText(f);
@@ -583,10 +500,6 @@ canvas.addEventListener('click', e=>{
     const p0 = parseFloat($('#apP0').value||'-40');
     const n  = parseFloat($('#apN').value||'2.2');
     aps.push({x,y,label,p0,n}); drawAll(); refreshAPList();
-  } else if(mode==='add'){
-    const rssi = parseFloat($('#rssiInput').value||'-60');
-    const label = $('#ssidInput').value.trim();
-    points.push({x,y,rssi,label}); drawAll(); refreshPointList();
   } else if(mode==='mat'){
     if(!tempLine) tempLine = {a:{x,y}, b:{x,y}};
     else{
@@ -608,10 +521,8 @@ canvas.addEventListener('mousemove', e=>{
 document.addEventListener('keydown', e=>{
   if(e.key==='s' || e.key==='S') setMode('scale');
   if(e.key==='a' || e.key==='A') setMode('ap');
-  if(e.key==='p' || e.key==='P') setMode('add');
   if(e.key==='w' || e.key==='W') setMode('mat');
   if(e.key==='h' || e.key==='H') renderHeatmap();
-  if(e.key==='z' || e.key==='Z'){ points.pop(); drawAll(); refreshPointList(); }
 });
 
 /* ========= Init ========= */
@@ -625,5 +536,3 @@ document.addEventListener('keydown', e=>{
 </script>
 </body>
 </html>
-
-
