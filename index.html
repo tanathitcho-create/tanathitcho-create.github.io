@@ -85,6 +85,7 @@
   </div>
 </header>
 
+<!-- Startup picker -->
 <div id="modePicker">
   <div class="pickerBox">
     <h2 class="pickerTitle">เลือกโหมดการทำงาน</h2>
@@ -97,6 +98,7 @@
 </div>
 
 <div class="container" id="appPlanning" style="display:grid">
+  <!-- Left control panel -->
   <aside class="panel">
     <div class="section">
       <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG)</div>
@@ -178,15 +180,15 @@
           <input type="number" id="alpha" value="0.6" min="0" max="1" step="0.05"/>
         </div>
       </div>
-      <div class="row" style="margin-top:10px">
+      <div class="row" style="margin-top:10px)">
         <button id="btnRender">🔥 สร้าง Heatmap</button>
         <button id="btnExport">🖼️ ส่งออก PNG</button>
       </div>
       <div class="legend" style="margin-top:10px">
         <div id="grad" class="grad"></div>
-        <div class="small"><span id="legendMin">-80</span> dBm ⟷ <span id="legendMax">-50</span> dBm</div>
+        <div class="small"><span id="legendMin">≤ -80</span> dBm ⟷ <span id="legendMax">-50</span> dBm</div>
       </div>
-      <div class="small muted">โทนสีคงที่: แดง (−80 dBm) → เขียว (−50 dBm)</div>
+      <div class="small muted">ค่าที่ ≤ −80 dBm จะแสดงเป็นสีเทา, จากนั้น แดง (−80) → เขียว (−50)</div>
     </div>
 
     <div class="section">
@@ -202,6 +204,7 @@
     </div>
   </aside>
 
+  <!-- Right workspace -->
   <main class="panel">
     <div class="row">
       <span class="badge" id="modeBadge">โหมด: Idle</span>
@@ -219,6 +222,7 @@
   </main>
 </div>
 
+<!-- Survey mode (placeholder) -->
 <div class="container" id="appSurvey" style="display:none;grid-template-columns:1fr">
   <main class="panel" style="display:flex;flex-direction:column;gap:12px">
     <div class="row">
@@ -261,6 +265,7 @@ pickSurvey.onclick   = ()=> setMode('survey');
 
 /* ===== thresholds & utilities ===== */
 const RSSI_MIN=-80, RSSI_MAX=-50;
+const BELOW_MIN_COLOR = [150,150,150]; // สีเทาสำหรับ ≤ -80 dBm
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -269,7 +274,7 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
 const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
 let floorImg=null;
-let floorScale=0.75; // %/100 — ทำให้แปลนเล็กลงกว่าก่อนหน้า
+let floorScale=0.75; // ค่าดีฟอลต์: แปลนเล็กลง 75% ของพื้นที่งาน
 let aps=[]; let segments=[];
 let mode='idle'; let dragging=false; let dragStart=null;
 let scale={pxPerMeter:null}; let hasRendered=false;
@@ -335,7 +340,6 @@ window.addEventListener('resize', applyCanvasCSSSize);
 function drawBase(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(floorImg){
-    // วาดแปลนตาม floorScale แบบกึ่งกลาง
     const w = Math.round(canvas.width * floorScale);
     const h = Math.round(canvas.height * floorScale);
     const x = Math.round((canvas.width - w)/2);
@@ -392,13 +396,21 @@ function drawArrow(a,b,opts={}){
 /* ===== legend & color ===== */
 function makeFixedLegend(){
   const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
-  const c=cvs.getContext('2d'); const gr=c.createLinearGradient(0,0,256,0);
-  gr.addColorStop(0,'#ff0000'); gr.addColorStop(1,'#00ff00'); c.fillStyle=gr; c.fillRect(0,0,256,1);
+  const c=cvs.getContext('2d');
+  // ซ้าย 32 px เป็นสีเทา (≤ -80 dBm)
+  c.fillStyle=`rgb(${BELOW_MIN_COLOR.join(',')})`;
+  c.fillRect(0,0,32,1);
+  // ไล่สี แดง→เขียว สำหรับช่วง -80 → -50
+  const gr=c.createLinearGradient(32,0,256,0);
+  gr.addColorStop(0,'#ff0000');
+  gr.addColorStop(1,'#00ff00');
+  c.fillStyle=gr; c.fillRect(32,0,224,1);
   g.style.backgroundImage=`url(${cvs.toDataURL()})`;
 }
 function colorFromRSSI(v){
-  if (v < RSSI_MIN) return [150,150,150]; // สีเทาสำหรับค่าน้อยกว่า -80 dBm
+  if (v <= RSSI_MIN) return BELOW_MIN_COLOR; // สีเทาสำหรับ ≤ -80 dBm
   const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1);
+  // แดง (-80) → เขียว (-50)
   return [Math.round(255*(1 - t)), Math.round(255*t), 0];
 }
 const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
@@ -441,7 +453,9 @@ function renderHeatmap(){
   if(aps.length===0) return;
   const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
   const blurPx=Math.max(0,parseInt($('#blurPx').value||'16',10));
-  UI.legendMin.textContent=RSSI_MIN; UI.legendMax.textContent=RSSI_MAX; makeFixedLegend();
+  UI.legendMin.textContent='≤ '+RSSI_MIN;
+  UI.legendMax.textContent=RSSI_MAX;
+  makeFixedLegend();
   drawBase();
   const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
   const hctx=heat.getContext('2d',{willReadFrequently:true});
@@ -626,7 +640,7 @@ document.addEventListener('keydown', e=>{
   if(e.key==='h'||e.key==='H'){ renderHeatmap(); hideProbe(); }
 });
 
-/* ===== floor scale controls ===== */
+/* floor scale controls */
 function setFloorScaleFromInput(v){
   const pct = clamp(parseInt(v,10)||75, 20, 150);
   UI.imgScale.value = pct;
@@ -637,7 +651,7 @@ function setFloorScaleFromInput(v){
 UI.imgScale.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 UI.imgScaleNum.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 
-/* ===== init ===== */
+/* init */
 (function init(){
   applyCanvasCSSSize();
   drawBase(); drawPermanent();
