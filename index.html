@@ -3,12 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Wi-Fi Heatmap — Planning (AP Model) + Obstacles — Smooth</title>
+<title>Wi-Fi Heatmap — Planning (AP Model) + Obstacles — Smooth + Probe</title>
 <style>
-  :root{
-    --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
-    --card:#1b2035; --btn:#232845; --ring:#2a7fff55; --danger:#ff7b7b;
-  }
+  :root{ --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
+         --card:#1b2035; --btn:#232845; --ring:#2a7fff55; --danger:#ff7b7b; }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;background:linear-gradient(120deg,#0f1220,#0e1428 60%,#0f1220);
@@ -34,7 +32,6 @@
   button:hover{transform:translateY(-1px);box-shadow:0 6px 18px -10px #000,0 0 0 2px var(--ring)}
   button.danger{background:#3a1b1b;border-color:#5a2a2a;color:#ffc6c6}
   .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
-  canvas{background:#0b0f1d;border-radius:12px;border:1px solid #263056;max-width:100%}
   .legend{display:flex;align-items:center;gap:10px}
   .grad{width:220px;height:12px;border-radius:999px;border:1px solid #2a3156}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
@@ -45,10 +42,19 @@
   .apRow,.matRow{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#141a34;border:1px solid #2a3156;border-radius:10px;padding:6px 8px}
   .dot{width:10px;height:10px;border-radius:50%}
   @media (max-width:980px){ .container{grid-template-columns:1fr} }
+
+  /* probe tooltip */
+  .stage{position:relative}
+  #probe{position:absolute;display:none;transform:translate(10px,-10px);
+         background:#0e1329;border:1px solid #2a3156;border-radius:10px;padding:6px 8px;
+         color:#e8ecf1;font:600 13px ui-monospace,monospace;pointer-events:none;z-index:5;
+         box-shadow:0 6px 20px rgba(0,0,0,.35)}
+  #probe .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid #0006}
+  #probe .sub{font-weight:500;color:#9aa4b2;margin-top:2px}
 </style>
 </head>
 <body>
-<header><h1>📶 Wi-Fi Heatmap — Planning (AP Model) + Obstacles — Smooth</h1></header>
+<header><h1>📶 Wi-Fi Heatmap — Planning (AP Model) + Obstacles — Smooth + Probe</h1></header>
 
 <div class="container">
   <!-- Left control panel -->
@@ -147,17 +153,21 @@
     </div>
 
     <div class="section small muted">
-      คีย์ลัด: <span class="kbd">S</span> สเกล • <span class="kbd">A</span> วาง AP • <span class="kbd">W</span> วัสดุ • <span class="kbd">H</span> เรนเดอร์
+      คีย์ลัด: <span class="kbd">S</span> สเกล • <span class="kbd">A</span> วาง AP • <span class="kbd">W</span> วัสดุ • <span class="kbd">H</span> เรนเดอร์ • คลิกบนแผนที่เพื่อ “Probe” ค่า RSSI
     </div>
   </aside>
 
   <!-- Right workspace -->
-  <main class="panel" style="display:flex;flex-direction:column;gap:10px">
+  <main class="panel stage" id="stage">
     <div class="row">
       <span class="badge" id="modeBadge">โหมด: Planning</span>
-      <span class="muted small">ลำดับ: อัปโหลดภาพ → ตั้งสเกล → วาง AP → วาดวัสดุ → เรนเดอร์</span>
+      <span class="muted small">ลำดับ: อัปโหลดภาพ → ตั้งสเกล → วาง AP → วาดวัสดุ → เรนเดอร์ → คลิกเพื่อดูค่า RSSI</span>
     </div>
     <canvas id="canvas" width="1280" height="800"></canvas>
+    <div id="probe">
+      <div><span class="sw" id="sw"></span><span id="probeVal">– dBm</span></div>
+      <div class="sub" id="probeMeta"></div>
+    </div>
   </main>
 </div>
 
@@ -174,7 +184,7 @@ function getCanvasPos(e){
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width  / rect.width;
   const scaleY = canvas.height / rect.height;
-  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY };
+  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY, rect };
 }
 function download(filename, data, type="application/json"){
   const blob = new Blob([data], {type});
@@ -213,6 +223,7 @@ let segments = [];  // {a:{x,y}, b:{x,y}, type, att}
 let mode = 'idle';  // 'scale'|'ap'|'mat'
 let scale = { pxPerMeter: null };
 let tempLine = null;
+let hasRendered = false; // เปิด probe หลัง render แล้ว
 
 const UI = {
   scaleLabel: $('#scaleLabel'),
@@ -221,6 +232,11 @@ const UI = {
   matList: $('#matList'),
   legendMin: $('#legendMin'),
   legendMax: $('#legendMax'),
+  probe: $('#probe'),
+  probeVal: $('#probeVal'),
+  probeMeta: $('#probeMeta'),
+  probeSw: $('#sw'),
+  stage: $('#stage')
 };
 
 /* ========= Image handling ========= */
@@ -240,6 +256,7 @@ function drawBase(){
     for(let x=0;x<canvas.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
     for(let y=0;y<canvas.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
   }
+  hideProbe();
 }
 
 function drawOverlays(){
@@ -278,17 +295,15 @@ function makeFixedLegend(){
   const g = $('#grad'); const cvs = document.createElement('canvas');
   cvs.width=256; cvs.height=1; const c=cvs.getContext('2d');
   const gr=c.createLinearGradient(0,0,256,0);
-  gr.addColorStop(0,'#ff0000'); // red
-  gr.addColorStop(1,'#00ff00'); // green
+  gr.addColorStop(0,'#ff0000'); gr.addColorStop(1,'#00ff00');
   c.fillStyle=gr; c.fillRect(0,0,256,1);
   g.style.backgroundImage = `url(${cvs.toDataURL()})`;
 }
-function colorFromRSSI(v){
-  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1); // -80→0 (แดง), -50→1 (เขียว)
-  const r = Math.round(255*(1-t));
-  const g = Math.round(255*t);
-  return [r,g,0];
+function colorFromRSSI(v){ // return [r,g,0]
+  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1);
+  return [Math.round(255*(1-t)), Math.round(255*t), 0];
 }
+function rgbStr([r,g,b]){ return `rgb(${r},${g},${b})`; }
 
 /* ========= Geometry / materials ========= */
 function orient(a,b,c){ return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x); }
@@ -311,7 +326,7 @@ function pathObstacleLoss(pFrom, pTo){
 }
 
 /* ========= AP Model ========= */
-// RSSI(d) = P0 - 10*n*log10(d/1m) - obstacleLoss
+// RSSI(d) = P0 - 10*n*log10(d) - obstacleLoss ; d in meters
 function rssiFromAPs(x,y){
   if(!aps.length) return null;
   if(!scale.pxPerMeter){ alert('โปรดตั้งสเกลก่อน (จำเป็นสำหรับ AP)'); throw new Error('no-scale'); }
@@ -319,9 +334,9 @@ function rssiFromAPs(x,y){
   let sum_mW = 0;
   for(const a of aps){
     const d_px = Math.hypot(x-a.x, y-a.y);
-    const d_m = Math.max(1e-3, d_px / scale.pxPerMeter); // เมตร
-    const lossObs = pathObstacleLoss(P, a);               // dB จากวัสดุ
-    const rssi = a.p0 - 10*a.n*Math.log10(d_m) - lossObs; // log10(d/1)=log10(d)
+    const d_m = Math.max(1e-3, d_px / scale.pxPerMeter);
+    const lossObs = pathObstacleLoss(P, a);
+    const rssi = a.p0 - 10*a.n*Math.log10(d_m) - lossObs;
     sum_mW += Math.pow(10, rssi/10);
   }
   return 10 * Math.log10(Math.max(1e-15, sum_mW));
@@ -349,7 +364,6 @@ function renderHeatmap(){
   let img = hctx.createImageData(heat.width, heat.height);
   let arr = img.data;
 
-  // per-pixel loop (เร็วพอสำหรับแผนที่ทั่วไป; ถ้าภาพใหญ่มากค่อยลด sampling)
   for(let y=0; y<heat.height; y++){
     for(let x=0; x<heat.width; x++){
       const rssi = rssiFromAPs(x, y);
@@ -360,7 +374,7 @@ function renderHeatmap(){
   }
   hctx.putImageData(img, 0, 0);
 
-  // 3) วางซ้อนด้วย blur + alpha → เนียน ไม่เป็นจุด/พิกเซล
+  // 3) วางซ้อนด้วย blur + alpha
   ctx.save();
   ctx.globalAlpha = alpha;
   if(blurPx>0) ctx.filter = `blur(${blurPx}px)`;
@@ -368,11 +382,43 @@ function renderHeatmap(){
   ctx.filter = 'none';
   ctx.restore();
 
-  // 4) วาด overlay (วัสดุ/เส้น/ป้าย/AP)
+  // 4) วาด overlay
   drawOverlays();
+
+  hasRendered = true;
 }
 
-/* ========= Lists ========= */
+/* ========= Probe (click to inspect) ========= */
+function showProbeAt(xCanvas, yCanvas, rect){
+  // วาดวงกลมจุดที่คลิก (overlay)
+  ctx.save();
+  ctx.beginPath(); ctx.arc(xCanvas, yCanvas, 6, 0, Math.PI*2);
+  ctx.fillStyle='#ffffff'; ctx.globalAlpha=.9; ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke();
+  ctx.restore();
+
+  // คำนวณ RSSI และสี
+  const rssi = rssiFromAPs(xCanvas, yCanvas);
+  const col = colorFromRSSI(rssi);
+  const colStr = rgbStr(col);
+
+  // อัปเดต tooltip
+  UI.probeVal.textContent = `${rssi.toFixed(1)} dBm`;
+  UI.probeMeta.textContent = `x=${xCanvas|0}, y=${yCanvas|0}`;
+  UI.probeSw.style.background = colStr;
+
+  // จัดตำแหน่ง tooltip (ภายใน stage)
+  const stageRect = UI.stage.getBoundingClientRect();
+  const px = (xCanvas / canvas.width)  * rect.width  + (rect.left - stageRect.left);
+  const py = (yCanvas / canvas.height) * rect.height + (rect.top  - stageRect.top);
+
+  UI.probe.style.left = `${px}px`;
+  UI.probe.style.top  = `${py}px`;
+  UI.probe.style.display = 'block';
+}
+function hideProbe(){ UI.probe.style.display='none'; }
+
+/* ========= Lists & UI ========= */
 function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 
 function refreshAPList(){
@@ -387,7 +433,7 @@ function refreshAPList(){
       <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
     row.querySelector('button').onclick = e=>{
       aps.splice(+e.target.getAttribute('data-i'),1);
-      drawBase(); drawOverlays(); refreshAPList();
+      drawBase(); drawOverlays(); hideProbe(); refreshAPList();
     };
     UI.apList.appendChild(row);
   });
@@ -409,7 +455,7 @@ function refreshMatList(){
       <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
     row.querySelector('button').onclick = e=>{
       segments.splice(+e.target.getAttribute('data-i'),1);
-      drawBase(); drawOverlays(); refreshMatList();
+      drawBase(); drawOverlays(); hideProbe(); refreshMatList();
     };
     UI.matList.appendChild(row);
   });
@@ -424,28 +470,28 @@ $('#fileInput').addEventListener('change', e=>{
     floorImg.width = img.width; floorImg.height = img.height;
     const c = floorImg.getContext('2d'); c.drawImage(img,0,0);
     fitCanvasToImage(img);
-    aps=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
+    aps=[]; segments=[]; tempLine=null; scale.pxPerMeter=null; hasRendered=false;
     UI.scaleLabel.textContent='ยังไม่ตั้ง';
-    drawBase(); drawOverlays(); makeFixedLegend();
+    drawBase(); drawOverlays(); makeFixedLegend(); hideProbe();
   };
   img.src = URL.createObjectURL(f);
 });
 $('#btnClear').onclick = ()=>{
-  floorImg=null; aps=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
-  UI.scaleLabel.textContent='ยังไม่ตั้ง'; drawBase(); drawOverlays(); makeFixedLegend();
+  floorImg=null; aps=[]; segments=[]; tempLine=null; scale.pxPerMeter=null; hasRendered=false;
+  UI.scaleLabel.textContent='ยังไม่ตั้ง'; drawBase(); drawOverlays(); makeFixedLegend(); hideProbe();
 };
 
-$('#btnScale').onclick = ()=> mode='scale';
-$('#btnAP').onclick    = ()=> mode='ap';
-$('#btnMat').onclick   = ()=> mode='mat';
+$('#btnScale').onclick = ()=>{ mode='scale'; hideProbe(); };
+$('#btnAP').onclick    = ()=>{ mode='ap';    hideProbe(); };
+$('#btnMat').onclick   = ()=>{ mode='mat';   hideProbe(); };
 
-$('#btnAPUndo').onclick = ()=>{ aps.pop(); drawBase(); drawOverlays(); refreshAPList(); };
-$('#btnAPClear').onclick = ()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); drawOverlays(); refreshAPList(); } };
+$('#btnAPUndo').onclick = ()=>{ aps.pop(); drawBase(); drawOverlays(); refreshAPList(); hideProbe(); };
+$('#btnAPClear').onclick = ()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); drawOverlays(); refreshAPList(); hideProbe(); } };
 
-$('#btnMatUndo').onclick = ()=>{ segments.pop(); drawBase(); drawOverlays(); refreshMatList(); };
-$('#btnMatClear').onclick = ()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); drawOverlays(); refreshMatList(); } };
+$('#btnMatUndo').onclick = ()=>{ segments.pop(); drawBase(); drawOverlays(); refreshMatList(); hideProbe(); };
+$('#btnMatClear').onclick = ()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); drawOverlays(); refreshMatList(); hideProbe(); } };
 
-$('#btnRender').onclick = renderHeatmap;
+$('#btnRender').onclick = ()=>{ renderHeatmap(); hideProbe(); };
 $('#btnExport').onclick = ()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
 
 $('#btnSave').onclick = ()=>{
@@ -455,7 +501,7 @@ $('#btnSave').onclick = ()=>{
     blurPx: +($('#blurPx').value||16),
     scale: scale.pxPerMeter
   };
-  download('heatmap_project_planning_smooth.json', JSON.stringify(payload,null,2));
+  download('heatmap_project_planning_probe.json', JSON.stringify(payload,null,2));
 };
 $('#loadJson').addEventListener('change', e=>{
   const f = e.target.files[0]; if(!f) return;
@@ -469,7 +515,7 @@ $('#loadJson').addEventListener('change', e=>{
       $('#blurPx').value = obj.blurPx ?? 16;
       scale.pxPerMeter = obj.scale || null;
       UI.scaleLabel.textContent = scale.pxPerMeter? `${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
-      drawBase(); drawOverlays(); makeFixedLegend();
+      drawBase(); drawOverlays(); makeFixedLegend(); hideProbe();
     }catch(err){ alert('ไฟล์ JSON ไม่ถูกต้อง'); }
   };
   reader.readAsText(f);
@@ -477,7 +523,7 @@ $('#loadJson').addEventListener('change', e=>{
 
 /* canvas interactions */
 canvas.addEventListener('click', e=>{
-  const {x,y} = getCanvasPos(e);
+  const {x,y,rect} = getCanvasPos(e);
   if(mode==='scale'){
     if(!tempLine) tempLine = {a:{x,y}, b:{x,y}};
     else{
@@ -488,14 +534,14 @@ canvas.addEventListener('click', e=>{
         scale.pxPerMeter = Lpx/(+real);
         UI.scaleLabel.textContent = `${scale.pxPerMeter.toFixed(1)} px/เมตร`;
       }
-      tempLine=null; mode='idle'; drawBase(); drawOverlays();
+      tempLine=null; mode='idle'; drawBase(); drawOverlays(); hideProbe();
     }
   } else if(mode==='ap'){
     if(!scale.pxPerMeter){ alert('โปรดตั้งสเกลก่อนวาง AP'); return; }
     const label = $('#apLabel').value.trim() || `AP-${aps.length+1}`;
     const p0 = parseFloat($('#apP0').value||'-40');
     const n  = parseFloat($('#apN').value||'2.2');
-    aps.push({x,y,label,p0,n}); drawBase(); drawOverlays(); refreshAPList();
+    aps.push({x,y,label,p0,n}); drawBase(); drawOverlays(); refreshAPList(); hideProbe();
   } else if(mode==='mat'){
     if(!tempLine) tempLine = {a:{x,y}, b:{x,y}};
     else{
@@ -503,22 +549,24 @@ canvas.addEventListener('click', e=>{
       const type = $('#matType').value;
       const att = parseFloat($('#matAtt').value|| (MATERIALS[type]?.att||8));
       segments.push({a:{...tempLine.a}, b:{...tempLine.b}, type, att});
-      tempLine=null; mode='idle'; drawBase(); drawOverlays(); refreshMatList();
+      tempLine=null; mode='idle'; drawBase(); drawOverlays(); refreshMatList(); hideProbe();
     }
-  }
-});
-canvas.addEventListener('mousemove', e=>{
-  if((mode==='scale' || mode==='mat') && tempLine){
-    const {x,y} = getCanvasPos(e);
-    tempLine.b = {x,y}; drawBase(); drawOverlays();
+  } else {
+    // idle → probe
+    if(!hasRendered){ alert('โปรดกด "สร้าง Heatmap" ก่อน แล้วค่อยคลิกเพื่อดูค่า'); return; }
+    // วาด probe ใหม่ (รีเฟรชพื้น-ฮีตแมป+overlay ก่อน เพื่อเคลียร์ marker เก่า)
+    renderHeatmap();
+    showProbeAt(x, y, rect);
   }
 });
 
+canvas.addEventListener('mousemove', ()=>{ /* reserved for future hover probe */ });
+
 document.addEventListener('keydown', e=>{
-  if(e.key==='s' || e.key==='S') mode='scale';
-  if(e.key==='a' || e.key==='A') mode='ap';
-  if(e.key==='w' || e.key==='W') mode='mat';
-  if(e.key==='h' || e.key==='H') renderHeatmap();
+  if(e.key==='s' || e.key==='S'){ mode='scale'; hideProbe(); }
+  if(e.key==='a' || e.key==='A'){ mode='ap';    hideProbe(); }
+  if(e.key==='w' || e.key==='W'){ mode='mat';   hideProbe(); }
+  if(e.key==='h' || e.key==='H'){ renderHeatmap(); hideProbe(); }
 });
 
 /* ========= Init ========= */
@@ -526,7 +574,7 @@ document.addEventListener('keydown', e=>{
   UI.legendMin.textContent = RSSI_MIN;
   UI.legendMax.textContent = RSSI_MAX;
   makeFixedLegend();
-  drawBase(); drawOverlays();
+  drawBase(); drawOverlays(); hideProbe();
 })();
 </script>
 </body>
