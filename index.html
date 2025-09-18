@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Wi-Fi Heatmap + Obstacles (IDW) — by you</title>
+<title>Wi-Fi Heatmap — RBF (Gaussian) + Obstacles</title>
 <style>
   :root{
     --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
-    --accent:#6ae3ff; --accent2:#7cff9b; --danger:#ff7b7b; --warn:#ffd36a;
     --card:#1b2035; --btn:#232845; --ring:#2a7fff55;
+    --danger:#ff7b7b;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;background:linear-gradient(120deg,#0f1220,#0e1428 60%,#0f1220);
-       color:var(--text);font:500 16px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial}
+       color:var(--text);font:500 16px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
   header{padding:14px 18px;border-bottom:1px solid #202540;background:rgba(17,22,36,.7);
          position:sticky;top:0;backdrop-filter:blur(8px);z-index:50}
-  header h1{margin:0;font-size:18px;letter-spacing:.2px}
+  header h1{margin:0;font-size:18px}
   .container{display:grid;grid-template-columns:360px 1fr;gap:14px;padding:14px;height:calc(100% - 64px)}
   .panel{background:var(--panel);border:1px solid #242a49;border-radius:14px;padding:14px;overflow:auto}
   .section{margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed #2a3156}
@@ -33,11 +33,9 @@
     cursor:pointer;transition:.15s;user-select:none
   }
   button:hover{transform:translateY(-1px);box-shadow:0 6px 18px -10px #000,0 0 0 2px var(--ring)}
-  button.ghost{background:transparent;border-color:#333b70}
   button.danger{background:#3a1b1b;border-color:#5a2a2a;color:#ffc6c6}
   .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
   canvas{background:#0b0f1d;border-radius:12px;border:1px solid #263056;max-width:100%}
-  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .legend{display:flex;align-items:center;gap:10px}
   .grad{width:180px;height:12px;border-radius:999px;border:1px solid #2a3156}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
@@ -46,17 +44,13 @@
   .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#22284a;border:1px solid #2a3156}
   .small{font-size:12px}
   .point{display:flex;justify-content:space-between;gap:10px;background:#131a33;border:1px solid #2a3156;border-radius:10px;padding:8px}
-  .footer{color:#8b95a7;font-size:12px;text-align:center;padding:10px}
   .matRow{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#141a34;border:1px solid #2a3156;border-radius:10px;padding:6px 8px}
   .dot{width:10px;height:10px;border-radius:50%}
-  .warnNote{background:#3a2f12;border:1px solid #5a4815;color:#ffecb3;padding:6px 8px;border-radius:8px;font-size:12px}
   @media (max-width: 980px){ .container{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-<header>
-  <h1>📶 Wi-Fi Heatmap — Obstacles-aware (IDW)</h1>
-</header>
+<header><h1>📶 Wi-Fi Heatmap — RBF (Gaussian) + Obstacles</h1></header>
 
 <div class="container">
   <!-- Left control panel -->
@@ -67,13 +61,12 @@
         <input type="file" id="fileInput" accept="image/*" />
         <button id="btnClear">ล้าง</button>
       </div>
-      <div class="small muted">แนะนำให้ใช้ภาพสัดส่วนเท่าจริงเพื่อความแม่นของสเกล</div>
     </div>
 
     <div class="section">
       <div class="label">2) ตั้งสเกลหน่วยจริง</div>
       <div class="row">
-        <button id="btnScale" title="คลิก 2 จุดบนภาพแล้วกรอกระยะจริง">🧭 ตั้งสเกล (ลาก 2 จุด)</button>
+        <button id="btnScale">🧭 ตั้งสเกล (ลาก 2 จุด)</button>
         <span class="chip">สเกลปัจจุบัน: <span id="scaleLabel">ยังไม่ตั้ง</span></span>
       </div>
     </div>
@@ -115,34 +108,19 @@
         <button id="btnMatUndo" class="ghost">↩️ ลบเส้นล่าสุด</button>
         <button id="btnMatClear" class="danger">🗑️ ล้างวัสดุทั้งหมด</button>
       </div>
-      <div class="small muted">ระบบจะลบสัญญาณตาม dB ของวัสดุทุกครั้งที่เส้นจาก “พิกัดที่คำนวณ” ไป “จุดวัด” ตัดผ่านเส้นวัสดุ</div>
       <div id="matList" style="margin-top:10px;display:grid;gap:6px;"></div>
-      <div class="warnNote" id="rbfWarn" style="margin-top:10px;display:none">
-        หมายเหตุ: การหักวัสดุรองรับในโหมด IDW เท่านั้น (ถ้าเลือก RBF ระบบจะไม่หัก dB จากวัสดุ)
-      </div>
     </div>
 
     <div class="section">
-      <div class="label">5) ตั้งค่า Heatmap</div>
+      <div class="label">5) ตั้งค่า RBF</div>
       <div class="grid">
-        <div>
-          <div class="label">วิธีคำนวณ</div>
-          <select id="method">
-            <option value="idw" selected>IDW (Obstacle-aware)</option>
-            <option value="rbf">RBF (Gaussian)</option>
-          </select>
-        </div>
-        <div>
-          <div class="label">Grid step (px)</div>
-          <input type="number" id="gridStep" value="6" min="2" step="1" />
-        </div>
         <div>
           <div class="label">RBF epsilon (px⁻¹)</div>
           <input type="number" id="epsilon" value="0.01" step="0.005" />
         </div>
         <div>
-          <div class="label">IDW power</div>
-          <input type="number" id="idwPow" value="2" step="0.5" />
+          <div class="label">Grid step (px)</div>
+          <input type="number" id="gridStep" value="6" min="2" step="1" />
         </div>
         <div>
           <div class="label">โปร่งใสฮีตแมป</div>
@@ -159,7 +137,7 @@
         </div>
       </div>
       <div class="row" style="margin-top:10px">
-        <button id="btnRender">🔥 สร้าง Heatmap</button>
+        <button id="btnRender">🔥 สร้าง Heatmap (RBF)</button>
         <button id="btnExport">🖼️ ส่งออก PNG</button>
       </div>
       <div class="legend" style="margin-top:10px">
@@ -174,24 +152,22 @@
         <button id="btnSave">💾 Save JSON</button>
         <input type="file" id="loadJson" accept="application/json" />
       </div>
-      <div class="small muted">ไฟล์ JSON จะเก็บจุดวัด + เส้นวัสดุ + การตั้งค่าทั้งหมด</div>
+      <div class="small muted">ไฟล์ JSON จะเก็บ: จุดวัด + เส้นวัสดุ + การตั้งค่าทั้งหมด</div>
     </div>
 
     <div class="section small muted">
       คีย์ลัด: <span class="kbd">S</span> ตั้งสเกล • <span class="kbd">P</span> เพิ่มจุด • <span class="kbd">W</span> วัสดุ • <span class="kbd">H</span> เรนเดอร์ • <span class="kbd">Z</span> ลบจุดล่าสุด
     </div>
-
-    <div class="footer">© คุณเป็นเจ้าของโปรเจกต์นี้บน GitHub — โค้ดนี้ไม่มีไลเซนส์ผูกมัด สามารถแก้/แจกได้</div>
   </aside>
 
   <!-- Right workspace -->
   <main class="panel" style="display:flex;flex-direction:column;gap:10px">
-    <div class="toolbar">
+    <div class="row">
       <span class="badge" id="modeBadge">โหมด: ปกติ</span>
-      <span class="muted small">คลิกที่แคนวาสเพื่อตามโหมดที่เลือก</span>
+      <span class="muted small">อัปโหลดภาพ → ตั้งสเกล → เพิ่มจุด → วาดวัสดุ → เรนเดอร์</span>
     </div>
     <canvas id="canvas" width="1280" height="800"></canvas>
-    <div class="small muted">ลำดับใช้งาน: อัปโหลดภาพ → ตั้งสเกล → เพิ่มจุด RSSI → วาดวัสดุ → สร้าง Heatmap</div>
+    <div class="small muted">หมายเหตุ: เบราว์เซอร์อ่านค่า Wi-Fi จริงไม่ได้ หน้านี้ใช้ค่าที่คุณวัดมาเอง</div>
   </main>
 </div>
 
@@ -201,13 +177,14 @@ const $ = sel => document.querySelector(sel);
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 const dist = (a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 
-/* พิกัดคลิกให้ตรงกับพิกัดจริงบน canvas */
+/* พิกัดคลิกตรงตามขนาดจริงแคนวาส */
 function getCanvasPos(e){
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width  / rect.width;
   const scaleY = canvas.height / rect.height;
   return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY };
 }
+
 function download(filename, data, type="application/json"){
   const blob = new Blob([data], {type});
   const url = URL.createObjectURL(blob);
@@ -217,13 +194,13 @@ function download(filename, data, type="application/json"){
 
 /* ========= Materials ========= */
 const MATERIALS = {
-  drywall:   {name:'ผนังยิปซัม (Drywall)', color:'#98c1ff', att:3},
-  glass:     {name:'กระจกธรรมดา',           color:'#7de1ff', att:4},
-  wood:      {name:'ไม้',                    color:'#9ae27b', att:5},
-  brick:     {name:'อิฐ/คอนกรีตมวลเบา',     color:'#ffb673', att:8},
-  concrete:  {name:'คอนกรีตเสริมเหล็ก',     color:'#ff8f8f', att:12},
-  metal:     {name:'โลหะแผ่น/ประตูเหล็ก',    color:'#ffd36a', att:20},
-  human:     {name:'ร่างกายคน (เฉลี่ย)',      color:'#d6b3ff', att:3}
+  drywall:  {name:'ผนังยิปซัม (Drywall)', color:'#98c1ff', att:3},
+  glass:    {name:'กระจก',                 color:'#7de1ff', att:4},
+  wood:     {name:'ไม้',                   color:'#9ae27b', att:5},
+  brick:    {name:'อิฐ/คอนกรีตมวลเบา',    color:'#ffb673', att:8},
+  concrete: {name:'คอนกรีตเสริมเหล็ก',    color:'#ff8f8f', att:12},
+  metal:    {name:'โลหะแผ่น/ประตูเหล็ก',   color:'#ffd36a', att:20},
+  human:    {name:'ร่างกายคน (เฉลี่ย)',     color:'#d6b3ff', att:3}
 };
 const matTypeSel = $('#matType');
 for(const k of Object.keys(MATERIALS)){
@@ -233,8 +210,7 @@ for(const k of Object.keys(MATERIALS)){
 matTypeSel.value = 'brick';
 $('#matAtt').value = MATERIALS['brick'].att;
 matTypeSel.addEventListener('change', ()=>{
-  const k = matTypeSel.value;
-  $('#matAtt').value = MATERIALS[k].att;
+  const k = matTypeSel.value; $('#matAtt').value = MATERIALS[k].att;
 });
 
 /* ========= Canvas & State ========= */
@@ -242,12 +218,11 @@ const canvas = $('#canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently:true });
 
 let floorImg = null;
-let points = [];   // {x,y,rssi,label}
-let segments = []; // {a:{x,y}, b:{x,y}, type:'brick', att:number}
-let mode = 'idle'; // 'scale'|'add'|'mat'
+let points = [];    // {x,y,rssi,label}
+let segments = [];  // {a:{x,y}, b:{x,y}, type, att}
+let mode = 'idle';  // 'scale'|'add'|'mat'
 let scale = { pxPerMeter: null };
-let tempLine = null;           // ใช้ทั้ง scale & mat (เป็นเส้นชั่วคราว)
-let rbfWeights = null;
+let tempLine = null;
 
 const UI = {
   scaleLabel: $('#scaleLabel'),
@@ -261,53 +236,49 @@ const UI = {
 /* ========= Image handling ========= */
 function fitCanvasToImage(img){
   const maxW = 1920, maxH = 1080;
-  let w = img.width, h = img.height;
-  const k = Math.min(maxW/w, maxH/h, 1);
-  canvas.width = Math.round(w*k);
-  canvas.height = Math.round(h*k);
+  const k = Math.min(maxW/img.width, maxH/img.height, 1);
+  canvas.width = Math.round(img.width*k);
+  canvas.height = Math.round(img.height*k);
 }
 
 function drawAll(){
-  // base/image
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(floorImg){ ctx.drawImage(floorImg,0,0,canvas.width,canvas.height); }
   else {
     ctx.fillStyle = '#0c1022'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.strokeStyle = '#1c264a'; ctx.lineWidth=1;
+    ctx.strokeStyle = '#1c264a'; ctx.lineWidth = 1;
     for(let x=0;x<canvas.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
     for(let y=0;y<canvas.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
   }
 
-  // draw obstacle segments
+  // วาดเส้นวัสดุ
   ctx.lineWidth = 3;
-  segments.forEach(seg=>{
-    const m = MATERIALS[seg.type] || {color:'#fff',name:seg.type};
-    ctx.strokeStyle = m.color; ctx.beginPath();
-    ctx.moveTo(seg.a.x, seg.a.y); ctx.lineTo(seg.b.x, seg.b.y); ctx.stroke();
-    // label
-    const mx = (seg.a.x+seg.b.x)/2, my=(seg.a.y+seg.b.y)/2;
-    ctx.fillStyle = '#e8ecf1'; ctx.font = '11px ui-monospace,monospace';
-    ctx.fillText(`${m.name} · ${seg.att} dB`, mx+6, my-6);
+  segments.forEach(s=>{
+    const m = MATERIALS[s.type] || {color:'#fff',name:s.type};
+    ctx.strokeStyle = m.color; ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
+    const mx=(s.a.x+s.b.x)/2, my=(s.a.y+s.b.y)/2;
+    ctx.fillStyle = '#e8ecf1'; ctx.font='11px ui-monospace,monospace';
+    ctx.fillText(`${m.name} · ${s.att} dB`, mx+6, my-6);
   });
 
-  // temp line (scale or material)
+  // เส้นชั่วคราว (scale/material)
   if(tempLine){
-    ctx.strokeStyle = '#8fd3ff'; ctx.setLineDash([8,6]); ctx.lineWidth=2.5;
+    ctx.strokeStyle='#8fd3ff'; ctx.setLineDash([8,6]); ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(tempLine.a.x,tempLine.a.y); ctx.lineTo(tempLine.b.x,tempLine.b.y); ctx.stroke();
     ctx.setLineDash([]);
     const Lpx = dist(tempLine.a,tempLine.b);
-    ctx.fillStyle = '#8fd3ff'; ctx.font = '12px ui-monospace,monospace';
+    ctx.fillStyle='#8fd3ff'; ctx.font='12px ui-monospace,monospace';
     ctx.fillText(`${Lpx.toFixed(1)} px`, tempLine.b.x+8, tempLine.b.y-6);
   }
 
-  // measurement points
+  // จุดวัด
   for(const p of points) drawPoint(p);
 }
 function drawPoint(p){
-  ctx.shadowColor = '#0008'; ctx.shadowBlur = 8; ctx.fillStyle = '#7cff9b';
+  ctx.shadowColor='#0008'; ctx.shadowBlur=8; ctx.fillStyle='#7cff9b';
   ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
-  ctx.strokeStyle = '#1b8a5f'; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillStyle = '#e8ecf1'; ctx.font='12px ui-monospace,monospace';
+  ctx.strokeStyle='#1b8a5f'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#e8ecf1'; ctx.font='12px ui-monospace,monospace';
   const label = `${p.rssi} dBm${p.label?` · ${p.label}`:''}`;
   ctx.fillText(label, p.x+10, p.y-8);
 }
@@ -316,7 +287,7 @@ function drawPoint(p){
 function makeGradient(palette='turbo'){
   const g = $('#grad'); const cvs = document.createElement('canvas');
   cvs.width=256; cvs.height=1; const c=cvs.getContext('2d');
-  const gr = c.createLinearGradient(0,0,256,0);
+  const gr=c.createLinearGradient(0,0,256,0);
   const stops = {
     turbo: [[0,'#30123b'],[0.2,'#4145ae'],[0.4,'#2ec7f0'],[0.6,'#7df87b'],[0.8,'#f4e55c'],[1,'#fb4a2a']],
     viridis: [[0,'#440154'],[0.25,'#3b528b'],[0.5,'#21918c'],[0.75,'#5dc963'],[1,'#fde725']],
@@ -326,8 +297,8 @@ function makeGradient(palette='turbo'){
   for(const [t,col] of stops) gr.addColorStop(t,col);
   c.fillStyle=gr; c.fillRect(0,0,256,1);
   g.style.backgroundImage = `url(${cvs.toDataURL()})`;
-  return (t)=>{ const x= Math.max(0,Math.min(255,Math.round(t*255)));
-    const d= c.getImageData(x,0,1,1).data; return `rgba(${d[0]},${d[1]},${d[2]},1)`; };
+  return (t)=>{ const x=clamp(Math.round(t*255),0,255);
+    const d=c.getImageData(x,0,1,1).data; return `rgba(${d[0]},${d[1]},${d[2]},1)`; };
 }
 let colorAt = makeGradient('turbo');
 
@@ -336,9 +307,9 @@ function orient(a,b,c){ return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x); }
 function onSeg(a,b,c){ return Math.min(a.x,b.x)-1e-6<=c.x && c.x<=Math.max(a.x,b.x)+1e-6 &&
                                Math.min(a.y,b.y)-1e-6<=c.y && c.y<=Math.max(a.y,b.y)+1e-6; }
 function segIntersect(p1,p2,q1,q2){
-  const o1 = orient(p1,p2,q1), o2 = orient(p1,p2,q2);
-  const o3 = orient(q1,q2,p1), o4 = orient(q1,q2,p2);
-  if( (o1*o2<0) && (o3*o4<0) ) return true;
+  const o1=orient(p1,p2,q1), o2=orient(p1,p2,q2);
+  const o3=orient(q1,q2,p1), o4=orient(q1,q2,p2);
+  if((o1*o2<0)&&(o3*o4<0)) return true;
   if(Math.abs(o1)<1e-8 && onSeg(p1,p2,q1)) return true;
   if(Math.abs(o2)<1e-8 && onSeg(p1,p2,q2)) return true;
   if(Math.abs(o3)<1e-8 && onSeg(q1,q2,p1)) return true;
@@ -346,54 +317,25 @@ function segIntersect(p1,p2,q1,q2){
   return false;
 }
 function pathObstacleLoss(pFrom, pTo){
-  // รวม dB ของทุกเส้นที่ตัดผ่าน
-  let loss = 0;
-  for(const s of segments){
-    if(segIntersect(pFrom, pTo, s.a, s.b)) loss += (Number(s.att)||0);
-  }
+  let loss=0;
+  for(const s of segments){ if(segIntersect(pFrom,pTo,s.a,s.b)) loss += (Number(s.att)||0); }
   return loss;
 }
 
-/* ========= Interpolators ========= */
-// IDW with obstacle-aware attenuation per crossing
-function idwValueObstacle(x,y, pts, power=2){
-  let num=0, den=0;
-  const P = {x,y};
-  for(const p of pts){
-    const d = Math.hypot(x-p.x,y-p.y);
-    const w = (d<1e-6)? 1e6 : 1/Math.pow(d,power);
-    // หักสัญญาณตามวัสดุ (รวม dB ทุกเส้นที่ตัดผ่าน)
-    const att = pathObstacleLoss(P, p);
-    const localRssi = p.rssi - att;
-    num += w * localRssi; den += w;
-  }
-  return num/Math.max(1e-12,den);
-}
+/* ========= RBF (Gaussian) — kernel regression + obstacle attenuation ========= */
+function rbfKernel(r, eps){ return Math.exp(- (eps*eps) * r*r); }
 
-// RBF (Gaussian kernel) — ไม่ obstacle-aware (ยัง)
-function buildRbfWeights(pts, eps){
-  const n = pts.length;
-  const A = Array.from({length:n},()=>Array(n).fill(0));
-  for(let i=0;i<n;i++){ for(let j=0;j<n;j++){
-    const r = Math.hypot(pts[i].x-pts[j].x, pts[i].y-pts[j].y);
-    A[i][j] = Math.exp(- (eps*eps) * r*r);
-  }}
-  // augment & solve
-  const b = pts.map(p=>p.rssi);
-  for(let i=0;i<n;i++) A[i].push(b[i]);
-  for(let i=0;i<n;i++){
-    let maxR=i; for(let r=i+1;r<n;r++) if(Math.abs(A[r][i])>Math.abs(A[maxR][i])) maxR=r;
-    if(maxR!==i){ const tmp=A[i]; A[i]=A[maxR]; A[maxR]=tmp; }
-    const piv=A[i][i]||1e-12; for(let j=i;j<=n;j++) A[i][j]/=piv;
-    for(let r=0;r<n;r++){ if(r===i) continue; const f=A[r][i]; for(let j=i;j<=n;j++) A[r][j]-=f*A[i][j]; }
+function rbfPredict(x,y, pts, eps){
+  let num=0, den=0; const P={x,y};
+  for(const p of pts){
+    const r = Math.hypot(x-p.x, y-p.y);
+    const w = rbfKernel(r, eps);
+    const att = pathObstacleLoss(P, p);          // dB ลดทอนจากวัสดุที่ตัดผ่าน
+    const localRssi = p.rssi - att;              // ปรับค่าจุดวัดรายเส้นทาง
+    num += w * localRssi;
+    den += w;
   }
-  return Array.from({length:n},(_,i)=>A[i][n]);
-}
-function rbfValue(x,y, pts, eps, weights){
-  let s=0; for(let i=0;i<pts.length;i++){
-    const r = Math.hypot(x-pts[i].x,y-pts[i].y);
-    s += weights[i]*Math.exp(-(eps*eps)*r*r);
-  } return s;
+  return num / Math.max(1e-12, den);
 }
 
 /* ========= Heatmap render ========= */
@@ -401,48 +343,37 @@ function renderHeatmap(){
   if(!floorImg){ alert('โปรดอัปโหลดภาพแปลนก่อน'); return; }
   if(points.length<2){ alert('ต้องมีจุดวัดอย่างน้อย 2 จุด'); return; }
 
-  const method = $('#method').value;
-  $('#rbfWarn').style.display = (method==='rbf' && segments.length>0)?'block':'none';
-
-  const gridStep = parseInt($('#gridStep').value || '6',10);
-  const alpha = Math.max(0, Math.min(1, parseFloat($('#alpha').value||'0.6')));
+  const gridStep = parseInt($('#gridStep').value||'6',10);
+  const alpha = clamp(parseFloat($('#alpha').value||'0.6'),0,1);
+  const eps = parseFloat($('#epsilon').value||'0.01');
   colorAt = makeGradient($('#palette').value);
 
-  // range for legend
-  let vmin = +Infinity, vmax = -Infinity;
+  // ช่วงค่า legend จากข้อมูลจริง (ไม่ได้รวม attenuation เพื่อให้ตีความง่าย)
+  let vmin=+Infinity, vmax=-Infinity;
   for(const p of points){ vmin=Math.min(vmin,p.rssi); vmax=Math.max(vmax,p.rssi); }
   UI.legendMin.textContent = vmin.toFixed(0);
   UI.legendMax.textContent = vmax.toFixed(0);
 
-  if(method==='rbf'){ rbfWeights = buildRbfWeights(points, parseFloat($('#epsilon').value||'0.01')); }
-
-  drawAll(); // base
+  drawAll();
 
   const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
   const data = imgData.data;
   const block = Math.max(2, gridStep|0);
-  const eps = parseFloat($('#epsilon').value||'0.01');
-  const pwr = parseFloat($('#idwPow').value||'2');
 
-  for(let y=0;y<canvas.height;y+=block){
-    for(let x=0;x<canvas.width;x+=block){
-      let val;
-      if(method==='idw'){
-        val = idwValueObstacle(x,y,points,pwr);
-      } else {
-        val = rbfValue(x,y,points,eps,rbfWeights);
-      }
-      const t = Math.max(0, Math.min(1, (val - vmin) / Math.max(1e-9,(vmax - vmin))));
-      const col = colorAt(1-t);
+  for(let y=0; y<canvas.height; y+=block){
+    for(let x=0; x<canvas.width; x+=block){
+      const val = rbfPredict(x,y,points,eps);
+      const t = clamp((val - vmin) / Math.max(1e-9,(vmax - vmin)), 0,1);
+      const col = colorAt(1-t); // 1-t: ค่าดี (ใกล้ 0 dBm) → สีฟ้า
       const m = col.match(/rgba\((\d+),(\d+),(\d+),/);
-      const r = +m[1], g=+m[2], b=+m[3];
+      const r=+m[1], g=+m[2], b=+m[3];
 
       for(let yy=0; yy<block; yy++){
         if(y+yy>=canvas.height) break;
         for(let xx=0; xx<block; xx++){
           if(x+xx>=canvas.width) break;
           const idx = ((y+yy)*canvas.width + (x+xx)) * 4;
-          const A = alpha;
+          const A=alpha;
           data[idx+0] = r*A + data[idx+0]*(1-A);
           data[idx+1] = g*A + data[idx+1]*(1-A);
           data[idx+2] = b*A + data[idx+2]*(1-A);
@@ -452,7 +383,7 @@ function renderHeatmap(){
     }
   }
   ctx.putImageData(imgData,0,0);
-  for(const p of points) drawPoint(p); // keep markers on top
+  for(const p of points) drawPoint(p);
 }
 
 /* ========= Lists ========= */
@@ -484,9 +415,7 @@ function refreshMatList(){
           <div class="muted">A(${s.a.x|0},${s.a.y|0}) → B(${s.b.x|0},${s.b.y|0})</div>
         </div>
       </div>
-      <div class="row">
-        <button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button>
-      </div>`;
+      <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
     row.querySelector('button').onclick = e=>{
       segments.splice(+e.target.getAttribute('data-i'),1);
       drawAll(); refreshMatList();
@@ -540,15 +469,13 @@ $('#btnExport').onclick = ()=>{ const a=document.createElement('a'); a.download=
 $('#btnSave').onclick = ()=>{
   const payload = {
     points, segments,
-    method: $('#method').value,
     gridStep: +($('#gridStep').value||6),
     epsilon: +($('#epsilon').value||0.01),
-    idwPow: +($('#idwPow').value||2),
     alpha: +($('#alpha').value||0.6),
     palette: $('#palette').value,
     scale: scale.pxPerMeter
   };
-  download('heatmap_project.json', JSON.stringify(payload,null,2));
+  download('heatmap_project_rbf.json', JSON.stringify(payload,null,2));
 };
 $('#loadJson').addEventListener('change', e=>{
   const f = e.target.files[0]; if(!f) return;
@@ -556,14 +483,12 @@ $('#loadJson').addEventListener('change', e=>{
   reader.onload = ()=>{
     try{
       const obj = JSON.parse(reader.result);
-      points = obj.points||[]; segments = obj.segments||[];
-      $('#method').value = obj.method||'idw';
-      $('#gridStep').value = obj.gridStep||6;
-      $('#epsilon').value = obj.epsilon||0.01;
-      $('#idwPow').value = obj.idwPow||2;
-      $('#alpha').value = obj.alpha||0.6;
-      $('#palette').value = obj.palette||'turbo';
-      scale.pxPerMeter = obj.scale||null;
+      points   = obj.points||[]; segments = obj.segments||[];
+      $('#gridStep').value = obj.gridStep ?? 6;
+      $('#epsilon').value  = obj.epsilon  ?? 0.01;
+      $('#alpha').value    = obj.alpha    ?? 0.6;
+      $('#palette').value  = obj.palette  ?? 'turbo';
+      scale.pxPerMeter = obj.scale || null;
       UI.scaleLabel.textContent = scale.pxPerMeter? `${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
       colorAt = makeGradient($('#palette').value);
       drawAll(); refreshPointList(); refreshMatList();
@@ -618,11 +543,11 @@ document.addEventListener('keydown', e=>{
 });
 
 /* ========= Init ========= */
-function initUI(){
+(function init(){
   colorAt = makeGradient('turbo');
   UI.modeBadge.textContent = 'โหมด: ปกติ';
-}
-initUI(); drawAll();
+  drawAll();
+})();
 </script>
 </body>
 </html>
