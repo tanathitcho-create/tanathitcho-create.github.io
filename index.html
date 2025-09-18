@@ -160,7 +160,7 @@
           <input type="number" id="matAtt" value="8" step="0.5"/>
         </div>
       </div>
-      <div class="row" style="margin-top:8px">
+      <div class="row" style="margin-top:8px)">
         <button id="btnMat">🧱 โหมดวัสดุ (กดค้าง–ลาก–ปล่อย)</button>
         <button id="btnMatUndo" class="ghost">↩️ ลบเส้นล่าสุด</button>
         <button id="btnMatClear" class="danger">🗑️ ล้างวัสดุทั้งหมด</button>
@@ -180,15 +180,16 @@
           <input type="number" id="alpha" value="0.6" min="0" max="1" step="0.05"/>
         </div>
       </div>
-      <div class="row" style="margin-top:10px)">
+      <div class="row" style="margin-top:10px">
         <button id="btnRender">🔥 สร้าง Heatmap</button>
         <button id="btnExport">🖼️ ส่งออก PNG</button>
       </div>
       <div class="legend" style="margin-top:10px">
         <div id="grad" class="grad"></div>
-        <div class="small"><span id="legendMin">≤ -80</span> dBm ⟷ <span id="legendMax">-50</span> dBm</div>
+        <div class="small">
+          สเกลสี: ≤−67 dBm = เทา (อ่อนลงจน −80) • −60 = เหลือง • −30 = เขียว
+        </div>
       </div>
-      <div class="small muted">ค่าที่ ≤ −80 dBm จะแสดงเป็นสีเทา, จากนั้น แดง (−80) → เขียว (−50)</div>
     </div>
 
     <div class="section">
@@ -264,17 +265,29 @@ pickPlanning.onclick = ()=> setMode('planning');
 pickSurvey.onclick   = ()=> setMode('survey');
 
 /* ===== thresholds & utilities ===== */
-const RSSI_MIN=-80, RSSI_MAX=-50;
-const BELOW_MIN_COLOR = [150,150,150]; // สีเทาสำหรับ ≤ -80 dBm
+const RSSI_MIN = -80;           // กำหนดปลายล่างสุดของสเกลเทา
+const P_GRAY   = -67;           // จุด "เทา"
+const P_YELLOW = -60;           // จุด "เหลือง"
+const P_GREEN  = -30;           // จุด "เขียว"
+
+const GRAY_BASE  = [128,128,128]; // สีเทาที่ -67
+const GRAY_LIGHT = [220,220,220]; // เทาอ่อนลงไปทาง -80
+
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const mixColor=(c1,c2,t)=>[
+  Math.round(lerp(c1[0],c2[0],t)),
+  Math.round(lerp(c1[1],c2[1],t)),
+  Math.round(lerp(c1[2],c2[2],t)),
+];
 
 /* ===== canvases & state ===== */
 const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
 const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
 let floorImg=null;
-let floorScale=0.75; // ค่าดีฟอลต์: แปลนเล็กลง 75% ของพื้นที่งาน
+let floorScale=0.75; // แปลนเริ่มต้นที่ 75% ของพื้นที่
 let aps=[]; let segments=[];
 let mode='idle'; let dragging=false; let dragStart=null;
 let scale={pxPerMeter:null}; let hasRendered=false;
@@ -395,23 +408,68 @@ function drawArrow(a,b,opts={}){
 
 /* ===== legend & color ===== */
 function makeFixedLegend(){
+  // วาดเลเจนด์กว้าง 256px: [เทาอ่อน→เทา] (−80→−67), [เทา→เหลือง] (−67→−60), [เหลือง→เขียว] (−60→−30), [เขียวล้วน] (>−30)
   const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
   const c=cvs.getContext('2d');
-  // ซ้าย 32 px เป็นสีเทา (≤ -80 dBm)
-  c.fillStyle=`rgb(${BELOW_MIN_COLOR.join(',')})`;
-  c.fillRect(0,0,32,1);
-  // ไล่สี แดง→เขียว สำหรับช่วง -80 → -50
-  const gr=c.createLinearGradient(32,0,256,0);
-  gr.addColorStop(0,'#ff0000');
-  gr.addColorStop(1,'#00ff00');
-  c.fillStyle=gr; c.fillRect(32,0,224,1);
+
+  const span1 = P_GRAY - RSSI_MIN;   // 13
+  const span2 = P_YELLOW - P_GRAY;   // 7
+  const span3 = P_GREEN - P_YELLOW;  // 30
+  const spanSum = span1 + span2 + span3; // 50
+  const usable = 240;                 // ใช้ 240px สำหรับช่วง 3 ส่วนแรก
+  const s = usable / spanSum;         // อัตราขยายเป็นพิกเซล
+
+  const px1 = Math.round(span1 * s);  // ≈62
+  const px2 = Math.round(span2 * s);  // ≈34
+  const px3 = Math.round(span3 * s);  // ≈144
+  const pxG = 256 - (px1+px2+px3);    // ส่วนที่เหลือใส่เขียวล้วน
+
+  let x = 0;
+  // ช่วง1: -80→-67 : เทาอ่อน → เทา
+  for(let i=0;i<px1;i++,x++){
+    const t = i/(px1||1); // 0→1
+    const col = mixColor(GRAY_LIGHT, GRAY_BASE, t);
+    c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+    c.fillRect(x,0,1,1);
+  }
+  // ช่วง2: -67→-60 : เทา → เหลือง
+  for(let i=0;i<px2;i++,x++){
+    const t = i/(px2||1);
+    const col = mixColor(GRAY_BASE, [255,255,0], t);
+    c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+    c.fillRect(x,0,1,1);
+  }
+  // ช่วง3: -60→-30 : เหลือง → เขียว
+  for(let i=0;i<px3;i++,x++){
+    const t = i/(px3||1);
+    const col = mixColor([255,255,0], [0,255,0], t);
+    c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+    c.fillRect(x,0,1,1);
+  }
+  // ส่วนเกิน: เขียวล้วน (> -30)
+  c.fillStyle = `rgb(0,255,0)`;
+  c.fillRect(x,0,pxG,1);
+
   g.style.backgroundImage=`url(${cvs.toDataURL()})`;
 }
 function colorFromRSSI(v){
-  if (v <= RSSI_MIN) return BELOW_MIN_COLOR; // สีเทาสำหรับ ≤ -80 dBm
-  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1);
-  // แดง (-80) → เขียว (-50)
-  return [Math.round(255*(1 - t)), Math.round(255*t), 0];
+  // ต่ำกว่า/เท่ากับ -67 dBm: เทา และยิ่งติดลบมากยิ่ง "อ่อนลง" ถึง -80
+  if (v <= P_GRAY){
+    const t = clamp((P_GRAY - v) / (P_GRAY - RSSI_MIN), 0, 1); // -67→0, -80→1
+    return mixColor(GRAY_BASE, GRAY_LIGHT, t);
+  }
+  // -67 → -60 : เทา → เหลือง
+  if (v <= P_YELLOW){
+    const t = (v - P_GRAY) / (P_YELLOW - P_GRAY);              // -67→0, -60→1
+    return mixColor(GRAY_BASE, [255,255,0], t);
+  }
+  // -60 → -30 : เหลือง → เขียว
+  if (v <= P_GREEN){
+    const t = (v - P_YELLOW) / (P_GREEN - P_YELLOW);           // -60→0, -30→1
+    return mixColor([255,255,0], [0,255,0], t);
+  }
+  // ดีกว่า -30 dBm: เขียวล้วน
+  return [0,255,0];
 }
 const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
@@ -433,9 +491,10 @@ function pathObstacleLoss(pFrom,pTo){
 }
 
 /* ===== AP model ===== */
+// RSSI(d) = P0 - 10*n*log10(d) - obstacleLoss ; d (m)
 function rssiFromAPs(x,y){
-  if(!aps.length) return RSSI_MIN;
-  if(!scale.pxPerMeter) return RSSI_MIN;
+  if(!aps.length) return RSSI_MIN;           // ไม่มี AP → ให้สีเทาช่วงล่าง
+  if(!scale.pxPerMeter) return RSSI_MIN;     // ยังไม่ตั้งสเกล → ให้สีเทาช่วงล่าง
   const P={x,y}; let sum_mW=0;
   for(const a of aps){
     const d_px=Math.hypot(x-a.x,y-a.y);
@@ -451,12 +510,12 @@ function rssiFromAPs(x,y){
 function renderHeatmap(){
   if(!floorImg) return;
   if(aps.length===0) return;
+
   const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
   const blurPx=Math.max(0,parseInt($('#blurPx').value||'16',10));
-  UI.legendMin.textContent='≤ '+RSSI_MIN;
-  UI.legendMax.textContent=RSSI_MAX;
-  makeFixedLegend();
+  makeFixedLegend();  // อัปเดตเลเจนด์ตามสเกลใหม่
   drawBase();
+
   const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
   const hctx=heat.getContext('2d',{willReadFrequently:true});
   let img=hctx.createImageData(heat.width,heat.height), arr=img.data;
