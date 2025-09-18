@@ -397,8 +397,9 @@ function makeFixedLegend(){
   g.style.backgroundImage=`url(${cvs.toDataURL()})`;
 }
 function colorFromRSSI(v){
-  const t=clamp((v-RSSI_MIN)/(RSSI_MAX-RSSI_MIN),0,1);
-  return [Math.round(255*(1-t)), Math.round(255*t), 0];
+  if (v < RSSI_MIN) return [150,150,150]; // สีเทาสำหรับค่าน้อยกว่า -80 dBm
+  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1);
+  return [Math.round(255*(1 - t)), Math.round(255*t), 0];
 }
 const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
