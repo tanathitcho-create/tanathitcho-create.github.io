@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Wi-Fi Heatmap (Static Web App) — by you</title>
+<title>Wi-Fi Heatmap — Walls & Materials Aware</title>
 <style>
   :root{
     --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
     --accent:#6ae3ff; --accent2:#7cff9b; --danger:#ff7b7b; --warn:#ffd36a;
-    --card:#1b2035; --btn:#232845; --btn2:#2b3156; --ring:#2a7fff55;
+    --card:#1b2035; --btn:#232845; --ring:#2a7fff55;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;background:linear-gradient(120deg,#0f1220,#0e1428 60%,#0f1220);
-       color:var(--text);font:500 16px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial}
+       color:var(--text);font:500 16px/1.45 ui-sans-serif,system-ui,Segoe UI,Inter,Roboto,Arial}
   header{padding:14px 18px;border-bottom:1px solid #202540;background:rgba(17,22,36,.7);
          position:sticky;top:0;backdrop-filter:blur(8px);z-index:50}
   header h1{margin:0;font-size:18px;letter-spacing:.2px}
-  .container{display:grid;grid-template-columns:340px 1fr;gap:14px;padding:14px;height:calc(100% - 64px)}
+  .container{display:grid;grid-template-columns:360px 1fr;gap:14px;padding:14px;height:calc(100% - 64px)}
   .panel{background:var(--panel);border:1px solid #242a49;border-radius:14px;padding:14px;overflow:auto}
   .section{margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed #2a3156}
   .section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
@@ -34,7 +34,6 @@
   }
   button:hover{transform:translateY(-1px);box-shadow:0 6px 18px -10px #000,0 0 0 2px var(--ring)}
   button.ghost{background:transparent;border-color:#333b70}
-  button.warn{background:#3a2c12;border-color:#5a4315;color:#ffe8a7}
   button.danger{background:#3a1b1b;border-color:#5a2a2a;color:#ffc6c6}
   .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
   canvas{background:#0b0f1d;border-radius:12px;border:1px solid #263056;max-width:100%}
@@ -42,25 +41,20 @@
   .legend{display:flex;align-items:center;gap:10px}
   .grad{width:180px;height:12px;border-radius:999px;border:1px solid #2a3156}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .kbd{font-family:ui-monospace,Menlo,Consolas,monospace;background:#222846;border:1px solid #2a3156;border-radius:6px;padding:2px 6px;color:#b9c3ff;font-size:12px}
   .muted{color:var(--muted)}
   .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#22284a;border:1px solid #2a3156}
-  .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-  .divider{height:1px;background:#28305a;margin:10px 0}
   .small{font-size:12px}
-  a{color:#8fd3ff;text-decoration:none}
-  .point{display:flex;justify-content:space-between;gap:10px;background:#131a33;border:1px solid #2a3156;
-         border-radius:10px;padding:8px}
-  .point strong{font-weight:700}
+  .point{display:flex;justify-content:space-between;gap:10px;background:#131a33;border:1px solid #2a3156;border-radius:10px;padding:8px}
+  .wall{display:flex;justify-content:space-between;gap:10px;background:#191f3b;border:1px solid #2a3156;border-radius:10px;padding:8px}
   .footer{color:#8b95a7;font-size:12px;text-align:center;padding:10px}
-  @media (max-width: 980px){
-    .container{grid-template-columns:1fr}
-  }
+  @media (max-width: 980px){ .container{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 <header>
-  <h1>📶 Wi-Fi Heatmap — Static Web App (GitHub Pages Ready)</h1>
+  <h1>📶 Wi-Fi Heatmap — Walls & Materials Aware (GitHub Pages Ready)</h1>
 </header>
 
 <div class="container">
@@ -72,7 +66,7 @@
         <input type="file" id="fileInput" accept="image/*" />
         <button id="btnClear">ล้าง</button>
       </div>
-      <div class="small muted">คำแนะนำ: ใช้รูปสัดส่วนเท่าจริงที่สุดเพื่อความแม่นของสเกล</div>
+      <div class="small muted">แนะนำ: ใช้ภาพสเกลเท่าจริงเพื่อความแม่นของสเกล</div>
     </div>
 
     <div class="section">
@@ -81,7 +75,7 @@
         <button id="btnScale" title="คลิก 2 จุดบนภาพแล้วกรอกระยะจริง">🧭 ตั้งสเกลด้วยการลาก 2 จุด</button>
         <span class="chip">สเกลปัจจุบัน: <span id="scaleLabel">ยังไม่ตั้ง</span></span>
       </div>
-      <div class="small muted">ผลลัพธ์ใช้ทั้งกับ Legend และคำนวณรัศมีในตัวแกน RBF</div>
+      <div class="small muted">ใช้กับ legend และการคำนวณบางส่วน</div>
     </div>
 
     <div class="section">
@@ -101,17 +95,61 @@
         <button id="btnUndo" class="ghost">↩️ ลบจุดล่าสุด</button>
         <button id="btnClearPts" class="danger">🗑️ ล้างทุกจุด</button>
       </div>
-      <div class="small muted">ค่ามากใกล้ 0 = สัญญาณแรง (เช่น -40 ดีมาก) / ค่าติดลบมาก = อ่อน</div>
+      <div class="small muted">ค่าที่ใกล้ 0 = สัญญาณแรง (เช่น -40 ดีมาก) / ค่าติดลบมาก = อ่อน</div>
       <div id="pointList" style="margin-top:10px;display:grid;gap:6px;"></div>
     </div>
 
     <div class="section">
-      <div class="label">4) ตั้งค่า Heatmap</div>
+      <div class="label">4) วัสดุ & กำแพง (คำนึงถึงการดูดกลืนสัญญาณ)</div>
+      <div class="grid3">
+        <div>
+          <div class="label">วัสดุที่จะวาด</div>
+          <select id="materialSelect"></select>
+        </div>
+        <div>
+          <div class="label">Atten (dB/ผนัง)</div>
+          <input type="number" id="matEditAtt" step="0.5" />
+        </div>
+        <div>
+          <div class="label">ตัวเลือก</div>
+          <button id="btnUpdateMat">อัปเดตวัสดุ</button>
+        </div>
+      </div>
+      <div class="grid3" style="margin-top:8px">
+        <div>
+          <div class="label">เพิ่มวัสดุใหม่ (ชื่อ)</div>
+          <input type="text" id="matName" placeholder="เช่น Gypsum+Insulation" />
+        </div>
+        <div>
+          <div class="label">Atten ใหม่ (dB)</div>
+          <input type="number" id="matAtt" step="0.5" value="6" />
+        </div>
+        <div style="display:flex;align-items:end">
+          <button id="btnAddMat">➕ เพิ่มวัสดุ</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnWall">🧱 โหมดวาดกำแพง (คลิก 2 จุด)</button>
+        <button id="btnUndoWall" class="ghost">↩️ ลบกำแพงล่าสุด</button>
+        <button id="btnClearWalls" class="danger">🗑️ ล้างกำแพงทั้งหมด</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <label class="small"><input type="checkbox" id="attenAware" checked /> ใช้การลดทอนวัสดุในการคำนวณ (แนะนำ)</label>
+        <label class="small"><input type="checkbox" id="showWalls" checked /> แสดงชั้นกำแพงบนแผนที่</label>
+      </div>
+      <div id="wallList" style="margin-top:10px;display:grid;gap:6px;"></div>
+      <div class="small muted" style="margin-top:6px">
+        หลักการ: ถ้าเส้นระหว่าง “จุดวัด ↔ จุดที่ต้องคำนวณ” ตัดผ่านกำแพง วัสดุแต่ละเส้นจะลดน้ำหนักอิทธิพลตามค่า dB (คูณด้วย 10^{-dB/10})
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">5) ตั้งค่า Heatmap</div>
       <div class="grid">
         <div>
           <div class="label">วิธีคำนวณ</div>
           <select id="method">
-            <option value="idw">IDW (Inverse Distance Weighting) — เร็ว</option>
+            <option value="idw">IDW — เร็ว</option>
             <option value="rbf" selected>RBF (Gaussian) — แม่นกว่า</option>
           </select>
         </div>
@@ -134,7 +172,7 @@
         <div>
           <div class="label">พาเลตสี</div>
           <select id="palette">
-            <option value="turbo" selected>Turbo (ดี→แย่: ฟ้า→เหลือง→แดง)</option>
+            <option value="turbo" selected>Turbo</option>
             <option value="viridis">Viridis</option>
             <option value="inferno">Inferno</option>
             <option value="jet">Jet</option>
@@ -152,29 +190,29 @@
     </div>
 
     <div class="section">
-      <div class="label">5) บันทึก/โหลดจุดวัด</div>
+      <div class="label">6) บันทึก/โหลด</div>
       <div class="row">
         <button id="btnSave">💾 Save JSON</button>
         <input type="file" id="loadJson" accept="application/json" />
       </div>
-      <div class="small muted">ไฟล์ JSON จะเก็บ: จุดวัด, วิธีคำนวณ, gridStep, epsilon, idwPower ฯลฯ</div>
+      <div class="small muted">ไฟล์ JSON จะเก็บ: จุดวัด, วัสดุ, กำแพง, วิธีคำนวณ, พารามิเตอร์</div>
     </div>
 
     <div class="section small muted">
-      คีย์ลัด: <span class="kbd">S</span> ตั้งสเกล • <span class="kbd">P</span> เพิ่มจุด • <span class="kbd">H</span> เรนเดอร์ฮีตแมป • <span class="kbd">Z</span> ลบจุดล่าสุด
+      คีย์ลัด: <span class="kbd">S</span> ตั้งสเกล • <span class="kbd">P</span> เพิ่มจุด • <span class="kbd">W</span> วาดกำแพง • <span class="kbd">H</span> เรนเดอร์ • <span class="kbd">Z</span> ลบจุด • <span class="kbd">X</span> ลบกำแพง
     </div>
 
-    <div class="footer">© คุณเป็นเจ้าของโปรเจกต์นี้บน GitHub — โค้ดนี้ไม่มีไลเซนส์ผูกมัด สามารถแก้/แจกได้</div>
+    <div class="footer">© คุณเป็นเจ้าของโปรเจกต์นี้ — แก้/แจกได้อิสระ</div>
   </aside>
 
   <!-- Right canvas/workspace -->
   <main class="panel" style="display:flex;flex-direction:column;gap:10px">
     <div class="toolbar">
       <span class="badge" id="modeBadge">โหมด: ปกติ</span>
-      <span class="muted small">คลิกที่แคนวาสเพื่อตามโหมดที่เลือก</span>
+      <span class="muted small">คลิกที่แคนวาสตามโหมดที่เลือก</span>
     </div>
     <canvas id="canvas" width="1280" height="800"></canvas>
-    <div class="small muted">คำแนะนำ: อัปโหลดภาพก่อน จากนั้นตั้งสเกล → เพิ่มจุด → สร้างฮีตแมป</div>
+    <div class="small muted">ลำดับ: อัปโหลดภาพ → ตั้งสเกล → วาดกำแพง + เพิ่มจุด → สร้างฮีตแมป</div>
   </main>
 </div>
 
@@ -183,25 +221,20 @@
 const $ = sel => document.querySelector(sel);
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 const dist = (a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-const lerp = (a,b,t)=>a+(b-a)*t;
 
-/* 👇 ฟังก์ชันใหม่: แปลงจุดคลิกให้ตรงกับพิกัดจริงบนแคนวาส */
+/* พิกัดคลิกตรงเป๊ะตามสเกลการแสดงผล */
 function getCanvasPos(e){
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width  / rect.width;
   const scaleY = canvas.height / rect.height;
-  return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top)  * scaleY
-  };
+  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
 }
 
 function download(filename, data, type="application/json"){
   const blob = new Blob([data], {type});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
 }
 
 /* ========= Canvas & State ========= */
@@ -210,18 +243,53 @@ const ctx = canvas.getContext('2d', { willReadFrequently:true });
 
 let floorImg = null;
 let points = []; // {x,y,rssi,label}
-let mode = 'idle'; // 'scale'|'add'
-let scale = { pxPerMeter: null }; // computed by 2-click ruler
-let tempLine = null; // {a:{x,y}, b:{x,y}}
+let mode = 'idle'; // 'scale'|'add'|'wall'
+let scale = { pxPerMeter: null };
+let tempLine = null; // for scale ruler
+let tempWall = null; // for wall drawing
 let rbfWeights = null;
+
+let materials = []; // {id,name,atten,color}
+let walls = []; // {a:{x,y}, b:{x,y}, matId:string}
 
 const UI = {
   scaleLabel: $('#scaleLabel'),
   modeBadge: $('#modeBadge'),
   pointList: $('#pointList'),
+  wallList: $('#wallList'),
   legendMin: $('#legendMin'),
   legendMax: $('#legendMax'),
+  materialSelect: $('#materialSelect'),
+  matEditAtt: $('#matEditAtt'),
+  attenAware: $('#attenAware'),
+  showWalls: $('#showWalls'),
 };
+
+/* ========= Default Materials ========= */
+function initDefaultMaterials(){
+  materials = [
+    {id:'air', name:'Air', atten:0,  color:'#6ae3ff'},
+    {id:'drywall', name:'Drywall', atten:3, color:'#b0d4ff'},
+    {id:'glass', name:'Glass', atten:2, color:'#a7ffe3'},
+    {id:'wood', name:'Wood', atten:4, color:'#d7b58a'},
+    {id:'brick', name:'Brick', atten:8, color:'#ffb28a'},
+    {id:'concrete', name:'Concrete', atten:12, color:'#c8c8c8'},
+    {id:'metal', name:'Metal', atten:18, color:'#ffd36a'}
+  ];
+}
+
+function populateMaterialSelect(){
+  UI.materialSelect.innerHTML = '';
+  materials.forEach(m=>{
+    const opt = document.createElement('option');
+    opt.value = m.id; opt.textContent = `${m.name} (${m.atten} dB)`;
+    UI.materialSelect.appendChild(opt);
+  });
+  // default select first non-air for walls
+  const prefer = materials.find(m=>m.id!=='air') || materials[0];
+  UI.materialSelect.value = prefer.id;
+  UI.matEditAtt.value = prefer.atten;
+}
 
 /* ========= Image handling ========= */
 function fitCanvasToImage(img){
@@ -233,65 +301,74 @@ function fitCanvasToImage(img){
 }
 
 function drawAll(){
-  // bg
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
   if(floorImg){
     ctx.drawImage(floorImg, 0,0, canvas.width, canvas.height);
-  } else {
+  }else{
     // grid bg
-    ctx.fillStyle = '#0c1022';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.strokeStyle = '#1c264a';
-    ctx.lineWidth = 1;
+    ctx.fillStyle = '#0c1022'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle='#1c264a'; ctx.lineWidth=1;
     for(let x=0;x<canvas.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
     for(let y=0;y<canvas.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
   }
-  // temp scale line
+
+  // optional: walls layer
+  if(UI.showWalls.checked) drawWalls();
+
+  // temp scale ruler
   if(tempLine){
-    ctx.strokeStyle = '#8fd3ff';
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([8,6]);
-    ctx.beginPath();
-    ctx.moveTo(tempLine.a.x,tempLine.a.y);
-    ctx.lineTo(tempLine.b.x,tempLine.b.y);
-    ctx.stroke();
+    ctx.strokeStyle = '#8fd3ff'; ctx.lineWidth = 2.5; ctx.setLineDash([8,6]);
+    ctx.beginPath(); ctx.moveTo(tempLine.a.x,tempLine.a.y); ctx.lineTo(tempLine.b.x,tempLine.b.y); ctx.stroke();
     ctx.setLineDash([]);
-    // length preview
     const Lpx = dist(tempLine.a,tempLine.b);
-    ctx.fillStyle = '#8fd3ff';
-    ctx.font = '12px ui-monospace,monospace';
+    ctx.fillStyle = '#8fd3ff'; ctx.font = '12px ui-monospace,monospace';
     ctx.fillText(`${Lpx.toFixed(1)} px`, tempLine.b.x+8, tempLine.b.y-6);
   }
 
-  // points
-  for(const p of points){
-    drawPoint(p);
+  // temp wall
+  if(tempWall){
+    const mat = materials.find(m=>m.id===tempWall.matId) || materials[0];
+    ctx.strokeStyle = mat.color; ctx.lineWidth = 3; ctx.setLineDash([10,6]);
+    ctx.beginPath(); ctx.moveTo(tempWall.a.x,tempWall.a.y); ctx.lineTo(tempWall.b.x,tempWall.b.y); ctx.stroke();
+    ctx.setLineDash([]);
   }
+
+  // points
+  for(const p of points) drawPoint(p);
 }
 
 function drawPoint(p){
-  ctx.shadowColor = '#0008';
-  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#0008'; ctx.shadowBlur = 8;
   ctx.fillStyle = '#7cff9b';
-  ctx.beginPath();
-  ctx.arc(p.x,p.y,6,0,Math.PI*2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = '#1b8a5f';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.fillStyle = '#e8ecf1';
-  ctx.font = '12px ui-monospace,monospace';
+  ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#1b8a5f'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#e8ecf1'; ctx.font = '12px ui-monospace,monospace';
   const label = `${p.rssi} dBm${p.label?` · ${p.label}`:''}`;
   ctx.fillText(label, p.x+10, p.y-8);
+}
+
+function drawWalls(){
+  for(const w of walls){
+    const mat = materials.find(m=>m.id===w.matId) || materials[0];
+    ctx.strokeStyle = mat.color; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(w.a.x,w.a.y); ctx.lineTo(w.b.x,w.b.y); ctx.stroke();
+    // end caps
+    ctx.fillStyle = mat.color;
+    ctx.beginPath(); ctx.arc(w.a.x,w.a.y,3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(w.b.x,w.b.y,3,0,Math.PI*2); ctx.fill();
+    // label mid
+    const mx = (w.a.x+w.b.x)/2, my=(w.a.y+w.b.y)/2;
+    ctx.fillStyle = '#e8ecf1';
+    ctx.font = '11px ui-monospace,monospace';
+    ctx.fillText(`${mat.name} ${mat.atten}dB`, mx+6, my-6);
+  }
 }
 
 /* ========= Palette ========= */
 function makeGradient(palette='turbo'){
   const g = $('#grad');
-  const cvs = document.createElement('canvas');
-  cvs.width = 256; cvs.height = 1;
+  const cvs = document.createElement('canvas'); cvs.width = 256; cvs.height = 1;
   const c = cvs.getContext('2d');
   const gr = c.createLinearGradient(0,0,256,0);
   const stops = {
@@ -299,7 +376,7 @@ function makeGradient(palette='turbo'){
     viridis: [[0,'#440154'],[0.25,'#3b528b'],[0.5,'#21918c'],[0.75,'#5dc963'],[1,'#fde725']],
     inferno: [[0,'#000004'],[0.2,'#2c115f'],[0.4,'#721f81'],[0.6,'#b73779'],[0.8,'#f1605d'],[1,'#fcfdbf']],
     jet: [[0,'#00007F'],[0.35,'#00FFFF'],[0.5,'#7FFF7F'],[0.65,'#FFFF00'],[1,'#7F0000']]
-  }[palette] || stops.turbo;
+  }[palette];
   for(const [t,col] of stops) gr.addColorStop(t,col);
   c.fillStyle = gr; c.fillRect(0,0,256,1);
   g.style.backgroundImage = `url(${cvs.toDataURL()})`;
@@ -311,39 +388,71 @@ function makeGradient(palette='turbo'){
 }
 let colorAt = makeGradient('turbo');
 
+/* ========= Geometry: segment intersection ========= */
+function ccw(A,B,C){ return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x); }
+function segIntersect(a,b,c,d){
+  // general case intersection (excluding full overlap)
+  return ccw(a,c,d) !== ccw(b,c,d) && ccw(a,b,c) !== ccw(a,b,d);
+}
+
+/* Sum attenuation (dB) along the straight path a->b by counting wall crossings */
+function pathAttenDb(a,b){
+  let sum = 0;
+  for(const w of walls){
+    if(segIntersect(a,b,w.a,w.b)){
+      const m = materials.find(mm=>mm.id===w.matId);
+      sum += (m? m.atten : 0);
+    }
+  }
+  return sum;
+}
+
+/* Convert attenuation in dB to linear power factor */
+function attenFactorFromDb(db){
+  // Power ratio: 10^(-dB/10)
+  return Math.pow(10, -db/10);
+}
+
 /* ========= Interpolators ========= */
-// IDW
-function idwValue(x,y, pts, power=2){
+// IDW with attenuation-aware weighting
+function idwValue(x,y, pts, power=2, useAtten=true){
   let num=0, den=0;
+  const q = {x,y};
   for(const p of pts){
     const d = Math.hypot(x-p.x,y-p.y);
-    const w = (d<1e-6)? 1e6 : 1/Math.pow(d,power);
+    let w = (d<1e-6)? 1e6 : 1/Math.pow(d,power);
+    if(useAtten){
+      const adb = pathAttenDb(p, q);
+      w *= attenFactorFromDb(adb);
+    }
     num += w * p.rssi;
     den += w;
   }
   return num/den;
 }
 
-// RBF (Gaussian kernel)
-function buildRbfWeights(pts, eps){
+// RBF (Gaussian) with attenuation-aware kernel
+function buildRbfWeights(pts, eps, useAtten=true){
   const n = pts.length;
   const A = Array.from({length:n},()=>Array(n).fill(0));
   for(let i=0;i<n;i++){
     for(let j=0;j<n;j++){
-      const r = Math.hypot(pts[i].x-pts[j].x, pts[i].y-pts[j].y);
-      A[i][j] = Math.exp(- (eps*eps) * r*r);
+      const d = Math.hypot(pts[i].x-pts[j].x, pts[i].y-pts[j].y);
+      let k = Math.exp(- (eps*eps) * d*d);
+      if(useAtten){
+        const adb = pathAttenDb(pts[i], pts[j]);
+        k *= attenFactorFromDb(adb);
+      }
+      A[i][j] = k;
     }
   }
   const b = pts.map(p=>p.rssi);
-  // Solve A w = b (Gaussian elimination)
-  const w = b.slice();
-  // augment
-  for(let i=0;i<n;i++){ A[i].push(w[i]); }
+  // Gaussian elimination solve A w = b
+  for(let i=0;i<n;i++){ A[i].push(b[i]); }
   for(let i=0;i<n;i++){
-    // pivot
     let maxR=i;
     for(let r=i+1;r<n;r++){ if(Math.abs(A[r][i])>Math.abs(A[maxR][i])) maxR=r; }
-    if(maxR!==i){ const tmp=A[i]; A[i]=A[maxR]; A[maxR]=tmp; }
+    if(maxR!==i){ const t=A[i]; A[i]=A[maxR]; A[maxR]=t; }
     const piv = A[i][i] || 1e-12;
     for(let j=i;j<=n;j++) A[i][j]/=piv;
     for(let r=0;r<n;r++){
@@ -356,11 +465,16 @@ function buildRbfWeights(pts, eps){
   for(let i=0;i<n;i++) sol[i]=A[i][n];
   return sol;
 }
-function rbfValue(x,y, pts, eps, weights){
-  let s=0;
+function rbfValue(x,y, pts, eps, weights, useAtten=true){
+  let s=0; const q={x,y};
   for(let i=0;i<pts.length;i++){
-    const r = Math.hypot(x-pts[i].x, y-pts[i].y);
-    s += weights[i] * Math.exp(- (eps*eps) * r*r);
+    const d = Math.hypot(x-pts[i].x, y-pts[i].y);
+    let k = Math.exp(- (eps*eps) * d*d);
+    if(useAtten){
+      const adb = pathAttenDb(pts[i], q);
+      k *= attenFactorFromDb(adb);
+    }
+    s += weights[i] * k;
   }
   return s;
 }
@@ -373,53 +487,48 @@ function renderHeatmap(){
   const method = $('#method').value;
   const gridStep = parseInt($('#gridStep').value || '6',10);
   const alpha = clamp(parseFloat($('#alpha').value||'0.6'), 0,1);
+  const eps = parseFloat($('#epsilon').value||'0.01');
+  const pwr = parseFloat($('#idwPow').value||'2');
+  const useAtt = UI.attenAware.checked;
 
   colorAt = makeGradient($('#palette').value);
 
-  // compute value range from points (for legend)
+  // value range by sampled points (legend)
   let vmin = +Infinity, vmax = -Infinity;
   for(const p of points){ vmin=Math.min(vmin,p.rssi); vmax=Math.max(vmax,p.rssi); }
   UI.legendMin.textContent = vmin.toFixed(0);
   UI.legendMax.textContent = vmax.toFixed(0);
 
-  // precompute RBF weights if needed
+  // precompute RBF weights with attenuation-aware kernel if selected
   if(method==='rbf'){
-    const eps = parseFloat($('#epsilon').value||'0.01');
-    rbfWeights = buildRbfWeights(points, eps);
+    rbfWeights = buildRbfWeights(points, eps, useAtt);
   }
 
-  // draw base image
+  // draw base + overlays
   drawAll();
 
-  // paint heatmap on top
+  // paint heatmap
   const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
   const data = imgData.data;
-
-  // sample on grid, then write small blocks for speed
   const block = Math.max(2, gridStep|0);
-  const eps = parseFloat($('#epsilon').value||'0.01');
-  const pwr = parseFloat($('#idwPow').value||'2');
 
   for(let y=0;y<canvas.height;y+=block){
     for(let x=0;x<canvas.width;x+=block){
       let val;
       if(method==='idw'){
-        val = idwValue(x,y,points,pwr);
+        val = idwValue(x,y,points,pwr,useAtt);
       } else {
-        val = rbfValue(x,y,points,eps,rbfWeights);
+        val = rbfValue(x,y,points,eps,rbfWeights,useAtt);
       }
       const t = clamp((val - vmin) / Math.max(1e-9,(vmax - vmin)), 0,1);
-      const col = colorAt(1-t); // 1-t: สีฟ้า=ดี (ค่าต่ำ→สัญญาณแรง)
-      // parse color
+      const col = colorAt(1-t);
       const m = col.match(/rgba\((\d+),(\d+),(\d+),/);
       const r = +m[1], g=+m[2], b=+m[3];
-
       for(let yy=0; yy<block; yy++){
         if(y+yy>=canvas.height) break;
         for(let xx=0; xx<block; xx++){
           if(x+xx>=canvas.width) break;
           const idx = ((y+yy)*canvas.width + (x+xx)) * 4;
-          // alpha blend over background
           const A = alpha;
           data[idx+0] = r*A + data[idx+0]*(1-A);
           data[idx+1] = g*A + data[idx+1]*(1-A);
@@ -431,11 +540,12 @@ function renderHeatmap(){
   }
   ctx.putImageData(imgData,0,0);
 
-  // draw points again on top
+  // draw points and (optionally) walls on top for clarity
+  if(UI.showWalls.checked) drawWalls();
   for(const p of points) drawPoint(p);
 }
 
-/* ========= UI: points list ========= */
+/* ========= UI lists ========= */
 function refreshPointList(){
   UI.pointList.innerHTML = '';
   points.forEach((p,i)=>{
@@ -446,10 +556,25 @@ function refreshPointList(){
                     <div><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
     el.querySelector('button').onclick = e=>{
       const idx = +e.target.getAttribute('data-i');
-      points.splice(idx,1);
-      drawAll(); refreshPointList();
+      points.splice(idx,1); drawAll(); refreshPointList();
     };
     UI.pointList.appendChild(el);
+  });
+}
+function refreshWallList(){
+  UI.wallList.innerHTML = '';
+  walls.forEach((w,i)=>{
+    const m = materials.find(mm=>mm.id===w.matId);
+    const el = document.createElement('div');
+    el.className = 'wall small';
+    el.innerHTML = `<div><strong>${m?m.name:'?'}</strong> · ${m?m.atten:0} dB
+                    <div class="muted">(${w.a.x|0},${w.a.y|0}) → (${w.b.x|0},${w.b.y|0})</div></div>
+                    <div><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
+    el.querySelector('button').onclick = e=>{
+      const idx = +e.target.getAttribute('data-i');
+      walls.splice(idx,1); drawAll(); refreshWallList();
+    };
+    UI.wallList.appendChild(el);
   });
 }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
@@ -457,46 +582,47 @@ function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;
 /* ========= Modes ========= */
 function setMode(m){
   mode = m;
-  UI.modeBadge.textContent = `โหมด: ${m==='idle'?'ปกติ': m==='scale'?'ตั้งสเกล (คลิก 2 จุด)':'เพิ่มจุด'}`;
+  UI.modeBadge.textContent = `โหมด: ${m==='idle'?'ปกติ': m==='scale'?'ตั้งสเกล (คลิก 2 จุด)': m==='add'?'เพิ่มจุด':'วาดกำแพง (คลิก 2 จุด)'}`;
 }
 
 /* ========= Events ========= */
 $('#fileInput').addEventListener('change', e=>{
-  const f = e.target.files[0];
-  if(!f) return;
+  const f = e.target.files[0]; if(!f) return;
   const img = new Image();
   img.onload = ()=>{
     floorImg = document.createElement('canvas');
     floorImg.width = img.width; floorImg.height = img.height;
-    const c = floorImg.getContext('2d');
-    c.drawImage(img,0,0);
+    floorImg.getContext('2d').drawImage(img,0,0);
     fitCanvasToImage(img);
-    points = [];
-    tempLine=null; scale.pxPerMeter=null;
+    points = []; walls = [];
+    tempLine=null; tempWall=null; scale.pxPerMeter=null;
     UI.scaleLabel.textContent = 'ยังไม่ตั้ง';
-    drawAll();
-    refreshPointList();
+    drawAll(); refreshPointList(); refreshWallList();
   };
   img.src = URL.createObjectURL(f);
 });
 
 $('#btnClear').onclick = ()=>{
-  floorImg = null;
-  points = [];
-  tempLine = null;
-  scale.pxPerMeter = null;
+  floorImg = null; points = []; walls = [];
+  tempLine = null; tempWall=null; scale.pxPerMeter = null;
   UI.scaleLabel.textContent = 'ยังไม่ตั้ง';
-  drawAll(); refreshPointList();
+  drawAll(); refreshPointList(); refreshWallList();
 };
 
 $('#btnScale').onclick = ()=> setMode('scale');
 $('#btnPoint').onclick = ()=> setMode('add');
+$('#btnWall').onclick  = ()=> setMode('wall');
 $('#btnUndo').onclick = ()=>{
-  points.pop();
-  drawAll(); refreshPointList();
+  points.pop(); drawAll(); refreshPointList();
+};
+$('#btnUndoWall').onclick = ()=>{
+  walls.pop(); drawAll(); refreshWallList();
 };
 $('#btnClearPts').onclick = ()=>{
   if(confirm('ล้างจุดวัดทั้งหมด?')){ points=[]; drawAll(); refreshPointList(); }
+};
+$('#btnClearWalls').onclick = ()=>{
+  if(confirm('ล้างกำแพงทั้งหมด?')){ walls=[]; drawAll(); refreshWallList(); }
 };
 $('#btnRender').onclick = renderHeatmap;
 
@@ -509,12 +635,15 @@ $('#btnExport').onclick = ()=>{
 
 $('#btnSave').onclick = ()=>{
   const payload = {
-    points, method: $('#method').value,
+    points, walls, materials,
+    method: $('#method').value,
     gridStep: +($('#gridStep').value||6),
     epsilon: +($('#epsilon').value||0.01),
     idwPow: +($('#idwPow').value||2),
     alpha: +($('#alpha').value||0.6),
     palette: $('#palette').value,
+    attenAware: UI.attenAware.checked,
+    showWalls: UI.showWalls.checked,
     scale: scale.pxPerMeter
   };
   download('heatmap_data.json', JSON.stringify(payload,null,2));
@@ -527,22 +656,27 @@ $('#loadJson').addEventListener('change', e=>{
     try{
       const obj = JSON.parse(reader.result);
       points = obj.points||[];
+      walls  = obj.walls||[];
+      materials = obj.materials && obj.materials.length ? obj.materials : (initDefaultMaterials(), materials);
       $('#method').value = obj.method||'rbf';
       $('#gridStep').value = obj.gridStep||6;
       $('#epsilon').value = obj.epsilon||0.01;
       $('#idwPow').value = obj.idwPow||2;
       $('#alpha').value = obj.alpha||0.6;
       $('#palette').value = obj.palette||'turbo';
+      UI.attenAware.checked = !!obj.attenAware;
+      UI.showWalls.checked = obj.showWalls!==false;
       scale.pxPerMeter = obj.scale||null;
       UI.scaleLabel.textContent = scale.pxPerMeter? `${(scale.pxPerMeter).toFixed(1)} px/เมตร` : 'ยังไม่ตั้ง';
       colorAt = makeGradient($('#palette').value);
-      drawAll(); refreshPointList();
+      populateMaterialSelect();
+      drawAll(); refreshPointList(); refreshWallList();
     }catch(err){ alert('ไฟล์ JSON ไม่ถูกต้อง'); }
   };
   reader.readAsText(f);
 });
 
-/* ✅ ใช้ตำแหน่งคลิกแบบแก้เยื้องแล้ว */
+/* Canvas interactions */
 canvas.addEventListener('click', e=>{
   const {x, y} = getCanvasPos(e);
 
@@ -556,37 +690,46 @@ canvas.addEventListener('click', e=>{
         scale.pxPerMeter = Lpx / (+real);
         UI.scaleLabel.textContent = `${scale.pxPerMeter.toFixed(1)} px/เมตร`;
       }
-      tempLine = null;
-      setMode('idle');
+      tempLine = null; setMode('idle'); drawAll();
     }
-    drawAll();
   } else if(mode==='add'){
     const rssi = parseFloat($('#rssiInput').value||'-60');
     const label = $('#ssidInput').value.trim();
     points.push({x,y,rssi,label});
     drawAll(); refreshPointList();
+  } else if(mode==='wall'){
+    if(!tempWall){
+      const matId = UI.materialSelect.value;
+      tempWall = {a:{x,y}, b:{x,y}, matId};
+    }else{
+      tempWall.b = {x,y};
+      walls.push({a:tempWall.a, b:tempWall.b, matId:tempWall.matId});
+      tempWall = null; drawAll(); refreshWallList();
+    }
   }
 });
 
 canvas.addEventListener('mousemove', e=>{
   if(mode==='scale' && tempLine){
     const {x, y} = getCanvasPos(e);
-    tempLine.b = {x, y};
-    drawAll();
+    tempLine.b = {x,y}; drawAll();
+  } else if(mode==='wall' && tempWall){
+    const {x, y} = getCanvasPos(e);
+    tempWall.b = {x,y}; drawAll();
   }
 });
 
 document.addEventListener('keydown', e=>{
-  if(e.key==='s' || e.key==='S'){ setMode('scale'); }
-  if(e.key==='p' || e.key==='P'){ setMode('add'); }
-  if(e.key==='h' || e.key==='H'){ renderHeatmap(); }
+  if(e.key==='s' || e.key==='S') setMode('scale');
+  if(e.key==='p' || e.key==='P') setMode('add');
+  if(e.key==='w' || e.key==='W') setMode('wall');
+  if(e.key==='h' || e.key==='H') renderHeatmap();
   if(e.key==='z' || e.key==='Z'){ points.pop(); drawAll(); refreshPointList(); }
+  if(e.key==='x' || e.key==='X'){ walls.pop(); drawAll(); refreshWallList(); }
 });
 
-/* init */
-drawAll();
-colorAt = makeGradient('turbo');
-UI.modeBadge.textContent = 'โหมด: ปกติ';
-</script>
-</body>
-</html>
+/* ========= Material UI ========= */
+$('#btnAddMat').onclick = ()=>{
+  const name = ($('#matName').value||'').trim();
+  const att = parseFloat($('#matAtt').value||'0');
+  if(!name){ alert('กรุณาตั้งชื่อวั
