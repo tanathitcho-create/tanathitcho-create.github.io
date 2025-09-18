@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Wi-Fi Heatmap — Access Point Model + Obstacles (Red→Green -90..-40 dBm)</title>
+<title>Wi-Fi Heatmap — Planning (AP Model) + Obstacles</title>
 <style>
   :root{
     --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
@@ -44,15 +44,34 @@
   .small{font-size:12px}
   .apRow,.matRow{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#141a34;border:1px solid #2a3156;border-radius:10px;padding:6px 8px}
   .dot{width:10px;height:10px;border-radius:50%}
+  .pill{display:inline-flex;gap:10px;background:#141a34;border:1px solid #2a3156;border-radius:999px;padding:6px 8px;align-items:center}
+  .pill input{accent-color:#6ae3ff}
+  .disabled{opacity:.55;cursor:not-allowed}
   @media (max-width:980px){ .container{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-<header><h1>📶 Wi-Fi Heatmap — Access Point Model + Obstacles (Red→Green)</h1></header>
+<header><h1>📶 Wi-Fi Heatmap — Planning (AP Model) + Obstacles</h1></header>
 
 <div class="container">
   <!-- Left control panel -->
   <aside class="panel">
+    <!-- Mode selector -->
+    <div class="section">
+      <div class="label">โหมดการใช้งาน</div>
+      <div class="pill">
+        <label style="display:flex;gap:6px;align-items:center">
+          <input type="radio" name="mode" id="modePlanning" checked>
+          <strong>Planning</strong><span class="muted small"> (ใช้ AP + วัสดุ)</span>
+        </label>
+        <label class="disabled" title="Survey จะเปิดใช้ภายหลัง">
+          <input type="radio" name="mode" id="modeSurvey" disabled>
+          <span>Survey</span><span class="muted small"> (จุดวัด RSSI)</span>
+        </label>
+      </div>
+      <div class="small muted">ตอนนี้เปิดเฉพาะ Planning ตามที่สั่งไว้ (Survey ถูกปิดไว้)</div>
+    </div>
+
     <div class="section">
       <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG)</div>
       <div class="row">
@@ -154,7 +173,7 @@
   <!-- Right workspace -->
   <main class="panel" style="display:flex;flex-direction:column;gap:10px">
     <div class="row">
-      <span class="badge" id="modeBadge">โหมด: ปกติ</span>
+      <span class="badge" id="modeBadge">โหมด: Planning</span>
       <span class="muted small">ลำดับ: อัปโหลดภาพ → ตั้งสเกล → วาง AP → วาดวัสดุ → เรนเดอร์</span>
     </div>
     <canvas id="canvas" width="1280" height="800"></canvas>
@@ -181,6 +200,19 @@ function download(filename, data, type="application/json"){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+/* ========= Mode (UI only; Survey disabled) ========= */
+$('#modePlanning').addEventListener('change', ()=> setUIMode('planning'));
+$('#modeSurvey')  .addEventListener('change', ()=>{
+  // ปิดไว้ชั่วคราว
+  alert('โหมด Survey (จุดวัด RSSI) ถูกปิดใช้งานตามที่สั่งไว้ — ตอนนี้ใช้ Planning เท่านั้น');
+  $('#modePlanning').checked = true;
+  setUIMode('planning');
+});
+function setUIMode(m){
+  UI.mode = m;
+  UI.modeBadge.textContent = `โหมด: ${m==='planning'?'Planning':'Survey'}`;
 }
 
 /* ========= Materials ========= */
@@ -215,6 +247,7 @@ let scale = { pxPerMeter: null };
 let tempLine = null;
 
 const UI = {
+  mode: 'planning',
   scaleLabel: $('#scaleLabel'),
   modeBadge: $('#modeBadge'),
   apList: $('#apList'),
@@ -414,9 +447,7 @@ function refreshMatList(){
 /* ========= Modes ========= */
 function setMode(m){
   mode = m;
-  UI.modeBadge.textContent = `โหมด: ${
-    m==='idle'?'ปกติ': m==='scale'?'ตั้งสเกล (คลิก 2 จุด)':
-    m==='ap'?'วาง AP':'ลากวัสดุ (คลิก-ลาก 2 จุด)'}`
+  UI.modeBadge.textContent = `โหมด: ${UI.mode==='planning'?'Planning':'Survey'}`;
 }
 
 /* ========= Events ========= */
@@ -454,12 +485,13 @@ $('#btnExport').onclick = ()=>{ const a=document.createElement('a'); a.download=
 
 $('#btnSave').onclick = ()=>{
   const payload = {
+    mode: UI.mode, // 'planning'
     aps, segments,
     gridStep: +($('#gridStep').value||6),
     alpha: +($('#alpha').value||0.6),
     scale: scale.pxPerMeter
   };
-  download('heatmap_project_ap_only.json', JSON.stringify(payload,null,2));
+  download('heatmap_project_planning.json', JSON.stringify(payload,null,2));
 };
 $('#loadJson').addEventListener('change', e=>{
   const f = e.target.files[0]; if(!f) return;
@@ -467,6 +499,7 @@ $('#loadJson').addEventListener('change', e=>{
   reader.onload = ()=>{
     try{
       const obj = JSON.parse(reader.result);
+      // mode ในไฟล์จะถูกเพิกเฉยถ้าไม่ใช่ 'planning'
       aps      = obj.aps||[];
       segments = obj.segments||[];
       $('#gridStep').value = obj.gridStep ?? 6;
@@ -527,10 +560,11 @@ document.addEventListener('keydown', e=>{
 
 /* ========= Init ========= */
 (function init(){
+  UI.mode='planning';
   UI.legendMin.textContent = RSSI_MIN;
   UI.legendMax.textContent = RSSI_MAX;
   makeFixedLegend();
-  UI.modeBadge.textContent = 'โหมด: ปกติ';
+  $('#modePlanning').checked = true;
   drawAll();
 })();
 </script>
