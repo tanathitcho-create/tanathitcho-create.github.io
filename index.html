@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Wi-Fi Heatmap — Planning (AP Model) + Obstacles</title>
+<title>Wi-Fi Heatmap — Planning (AP Model) + Obstacles — Smooth</title>
 <style>
   :root{
     --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
@@ -51,12 +51,11 @@
 </style>
 </head>
 <body>
-<header><h1>📶 Wi-Fi Heatmap — Planning (AP Model) + Obstacles</h1></header>
+<header><h1>📶 Wi-Fi Heatmap — Planning (AP Model) + Obstacles — Smooth</h1></header>
 
 <div class="container">
-  <!-- Left control panel -->
+  <!-- Left panel -->
   <aside class="panel">
-    <!-- Mode selector -->
     <div class="section">
       <div class="label">โหมดการใช้งาน</div>
       <div class="pill">
@@ -69,7 +68,7 @@
           <span>Survey</span><span class="muted small"> (จุดวัด RSSI)</span>
         </label>
       </div>
-      <div class="small muted">ตอนนี้เปิดเฉพาะ Planning ตามที่สั่งไว้ (Survey ถูกปิดไว้)</div>
+      <div class="small muted">ตอนนี้เปิดเฉพาะ Planning ตามที่สั่งไว้</div>
     </div>
 
     <div class="section">
@@ -81,7 +80,7 @@
     </div>
 
     <div class="section">
-      <div class="label">2) ตั้งสเกลหน่วยจริง (จำเป็นเมื่อใช้ AP)</div>
+      <div class="label">2) ตั้งสเกลหน่วยจริง</div>
       <div class="row">
         <button id="btnScale">🧭 ตั้งสเกล (ลาก 2 จุด)</button>
         <span class="chip">สเกลปัจจุบัน: <span id="scaleLabel">ยังไม่ตั้ง</span></span>
@@ -183,7 +182,7 @@
 <script>
 /* ========= Constants ========= */
 const RSSI_MIN = -90;   // แดง
-const RSSI_MAX = -40;   // เขียว
+theRSSI_MAX = -40;      // เขียว
 
 /* ========= Utilities ========= */
 const $ = sel => document.querySelector(sel);
@@ -200,19 +199,6 @@ function download(filename, data, type="application/json"){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
-}
-
-/* ========= Mode (UI only; Survey disabled) ========= */
-$('#modePlanning').addEventListener('change', ()=> setUIMode('planning'));
-$('#modeSurvey')  .addEventListener('change', ()=>{
-  // ปิดไว้ชั่วคราว
-  alert('โหมด Survey (จุดวัด RSSI) ถูกปิดใช้งานตามที่สั่งไว้ — ตอนนี้ใช้ Planning เท่านั้น');
-  $('#modePlanning').checked = true;
-  setUIMode('planning');
-});
-function setUIMode(m){
-  UI.mode = m;
-  UI.modeBadge.textContent = `โหมด: ${m==='planning'?'Planning':'Survey'}`;
 }
 
 /* ========= Materials ========= */
@@ -264,7 +250,7 @@ function fitCanvasToImage(img){
   canvas.height = Math.round(img.height*k);
 }
 
-function drawAll(){
+function drawBase(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(floorImg){ ctx.drawImage(floorImg,0,0,canvas.width,canvas.height); }
   else {
@@ -273,8 +259,10 @@ function drawAll(){
     for(let x=0;x<canvas.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
     for(let y=0;y<canvas.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
   }
+}
 
-  // วาดเส้นวัสดุ
+function drawOverlays(){
+  // วัสดุ
   ctx.lineWidth = 3;
   segments.forEach(s=>{
     const m = MATERIALS[s.type] || {color:'#fff',name:s.type};
@@ -295,14 +283,13 @@ function drawAll(){
   }
 
   // APs
-  aps.forEach(a=> drawAP(a));
-}
-function drawAP(a){
-  ctx.fillStyle = '#8fd3ff';
-  ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='#2a7fff'; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
-  ctx.fillText(`${a.label||'AP'} · P0:${a.p0}dBm n:${a.n}`, a.x+10, a.y-8);
+  aps.forEach(a=>{
+    ctx.fillStyle = '#8fd3ff';
+    ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#2a7fff'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
+    ctx.fillText(`${a.label||'AP'} · P0:${a.p0}dBm n:${a.n}`, a.x+10, a.y-8);
+  });
 }
 
 /* ========= Fixed red→green palette (-90 to -40 dBm) ========= */
@@ -316,10 +303,10 @@ function makeFixedLegend(){
   g.style.backgroundImage = `url(${cvs.toDataURL()})`;
 }
 function colorFromRSSI(v){
-  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1); // -90→0 (แดง), -40→1 (เขียว)
+  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - theRSSI_MAX), 0, 1); // -90→0 (แดง), -40→1 (เขียว)
   const r = Math.round(255*(1-t));
   const g = Math.round(255*t);
-  return [r,g,0];
+  return `rgb(${r},${g},0)`;
 }
 
 /* ========= Geometry: segment intersection ========= */
@@ -359,44 +346,47 @@ function rssiFromAPs(x,y){
   return 10 * Math.log10(Math.max(1e-15, sum_mW));
 }
 
-/* ========= Heatmap render ========= */
+/* ========= Heatmap render (smooth) ========= */
 function renderHeatmap(){
   if(!floorImg){ alert('โปรดอัปโหลดภาพแปลนก่อน'); return; }
   if(aps.length===0){ alert('กรุณาวาง AP อย่างน้อย 1 ตัว'); return; }
 
   const gridStep = parseInt($('#gridStep').value||'6',10);
   const alpha = clamp(parseFloat($('#alpha').value||'0.6'),0,1);
+  const blurPx = Math.max(4, Math.round(gridStep*1.5)); // เบลอพอให้เนียนตามสัดส่วน step
 
   UI.legendMin.textContent = RSSI_MIN;
-  UI.legendMax.textContent = RSSI_MAX;
+  UI.legendMax.textContent = theRSSI_MAX;
   makeFixedLegend();
-  drawAll();
 
-  const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
-  const data = imgData.data;
+  // 1) เคลียร์และวาดพื้นหลัง (แปลน)
+  drawBase();
+
+  // 2) เรนเดอร์ฮีตแมปลง offscreen canvas แบบ “บล็อกสีทึบ”
+  const heat = document.createElement('canvas');
+  heat.width = canvas.width; heat.height = canvas.height;
+  const hctx = heat.getContext('2d', { willReadFrequently:true });
+
   const block = Math.max(2, gridStep|0);
-
   for(let y=0; y<canvas.height; y+=block){
     for(let x=0; x<canvas.width; x+=block){
-      const val = rssiFromAPs(x,y); // อิงระยะจาก AP
-      const [r,g,b] = colorFromRSSI(val);
-
-      for(let yy=0; yy<block; yy++){
-        if(y+yy>=canvas.height) break;
-        for(let xx=0; xx<block; xx++){
-          if(x+xx>=canvas.width) break;
-          const idx = ((y+yy)*canvas.width + (x+xx)) * 4;
-          const A=alpha;
-          data[idx+0] = r*A + data[idx+0]*(1-A);
-          data[idx+1] = g*A + data[idx+1]*(1-A);
-          data[idx+2] = b*A + data[idx+2]*(1-A);
-          data[idx+3] = 255;
-        }
-      }
+      const val = rssiFromAPs(x+block/2, y+block/2); // sample กลางบล็อกให้เนียน
+      hctx.fillStyle = colorFromRSSI(val);
+      hctx.fillRect(x, y, block, block);
     }
   }
-  ctx.putImageData(imgData,0,0);
-  aps.forEach(a=> drawAP(a));
+
+  // 3) วางซ้อนด้วย blur + alpha → สีเนียนไม่เป็นเหลี่ยม
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.imageSmoothingEnabled = true;
+  ctx.filter = `blur(${blurPx}px)`;
+  ctx.drawImage(heat, 0, 0);
+  ctx.filter = 'none';
+  ctx.restore();
+
+  // 4) วาด overlay คมชัดทับบนฮีตแมป (วัสดุ, เส้นชั่วคราว, AP)
+  drawOverlays();
 }
 
 /* ========= Lists ========= */
@@ -411,12 +401,10 @@ function refreshAPList(){
         <strong>${escapeHtml(a.label||'AP')}</strong> · P0:${a.p0} dBm · n:${a.n}
         <div class="muted">(${a.x|0},${a.y|0})</div>
       </div>
-      <div class="row">
-        <button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button>
-      </div>`;
+      <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
     row.querySelector('button').onclick = e=>{
       aps.splice(+e.target.getAttribute('data-i'),1);
-      drawAll(); refreshAPList();
+      drawBase(); drawOverlays(); refreshAPList();
     };
     UI.apList.appendChild(row);
   });
@@ -438,16 +426,10 @@ function refreshMatList(){
       <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
     row.querySelector('button').onclick = e=>{
       segments.splice(+e.target.getAttribute('data-i'),1);
-      drawAll(); refreshMatList();
+      drawBase(); drawOverlays(); refreshMatList();
     };
     UI.matList.appendChild(row);
   });
-}
-
-/* ========= Modes ========= */
-function setMode(m){
-  mode = m;
-  UI.modeBadge.textContent = `โหมด: ${UI.mode==='planning'?'Planning':'Survey'}`;
 }
 
 /* ========= Events ========= */
@@ -461,24 +443,24 @@ $('#fileInput').addEventListener('change', e=>{
     fitCanvasToImage(img);
     aps=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
     UI.scaleLabel.textContent='ยังไม่ตั้ง';
-    drawAll(); refreshAPList(); refreshMatList(); makeFixedLegend();
+    drawBase(); drawOverlays(); makeFixedLegend();
   };
   img.src = URL.createObjectURL(f);
 });
 $('#btnClear').onclick = ()=>{
   floorImg=null; aps=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
-  UI.scaleLabel.textContent='ยังไม่ตั้ง'; drawAll(); refreshAPList(); refreshMatList(); makeFixedLegend();
+  UI.scaleLabel.textContent='ยังไม่ตั้ง'; drawBase(); drawOverlays(); makeFixedLegend();
 };
 
-$('#btnScale').onclick = ()=> setMode('scale');
-$('#btnAP').onclick    = ()=> setMode('ap');
-$('#btnMat').onclick   = ()=> setMode('mat');
+$('#btnScale').onclick = ()=> mode='scale';
+$('#btnAP').onclick    = ()=> mode='ap';
+$('#btnMat').onclick   = ()=> mode='mat';
 
-$('#btnAPUndo').onclick = ()=>{ aps.pop(); drawAll(); refreshAPList(); };
-$('#btnAPClear').onclick = ()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawAll(); refreshAPList(); } };
+$('#btnAPUndo').onclick = ()=>{ aps.pop(); drawBase(); drawOverlays(); refreshAPList(); };
+$('#btnAPClear').onclick = ()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); drawOverlays(); refreshAPList(); } };
 
-$('#btnMatUndo').onclick = ()=>{ segments.pop(); drawAll(); refreshMatList(); };
-$('#btnMatClear').onclick = ()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawAll(); refreshMatList(); } };
+$('#btnMatUndo').onclick = ()=>{ segments.pop(); drawBase(); drawOverlays(); refreshMatList(); };
+$('#btnMatClear').onclick = ()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); drawOverlays(); refreshMatList(); } };
 
 $('#btnRender').onclick = renderHeatmap;
 $('#btnExport').onclick = ()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
@@ -491,7 +473,7 @@ $('#btnSave').onclick = ()=>{
     alpha: +($('#alpha').value||0.6),
     scale: scale.pxPerMeter
   };
-  download('heatmap_project_planning.json', JSON.stringify(payload,null,2));
+  download('heatmap_project_planning_smooth.json', JSON.stringify(payload,null,2));
 };
 $('#loadJson').addEventListener('change', e=>{
   const f = e.target.files[0]; if(!f) return;
@@ -499,14 +481,13 @@ $('#loadJson').addEventListener('change', e=>{
   reader.onload = ()=>{
     try{
       const obj = JSON.parse(reader.result);
-      // mode ในไฟล์จะถูกเพิกเฉยถ้าไม่ใช่ 'planning'
       aps      = obj.aps||[];
       segments = obj.segments||[];
       $('#gridStep').value = obj.gridStep ?? 6;
       $('#alpha').value    = obj.alpha    ?? 0.6;
       scale.pxPerMeter = obj.scale || null;
       UI.scaleLabel.textContent = scale.pxPerMeter? `${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
-      drawAll(); refreshAPList(); refreshMatList(); makeFixedLegend();
+      drawBase(); drawOverlays(); makeFixedLegend();
     }catch(err){ alert('ไฟล์ JSON ไม่ถูกต้อง'); }
   };
   reader.readAsText(f);
@@ -525,14 +506,14 @@ canvas.addEventListener('click', e=>{
         scale.pxPerMeter = Lpx/(+real);
         UI.scaleLabel.textContent = `${scale.pxPerMeter.toFixed(1)} px/เมตร`;
       }
-      tempLine=null; setMode('idle'); drawAll();
+      tempLine=null; mode='idle'; drawBase(); drawOverlays();
     }
   } else if(mode==='ap'){
     if(!scale.pxPerMeter){ alert('โปรดตั้งสเกลก่อนวาง AP'); return; }
     const label = $('#apLabel').value.trim() || `AP-${aps.length+1}`;
     const p0 = parseFloat($('#apP0').value||'-40');
     const n  = parseFloat($('#apN').value||'2.2');
-    aps.push({x,y,label,p0,n}); drawAll(); refreshAPList();
+    aps.push({x,y,label,p0,n}); drawBase(); drawOverlays(); refreshAPList();
   } else if(mode==='mat'){
     if(!tempLine) tempLine = {a:{x,y}, b:{x,y}};
     else{
@@ -540,21 +521,21 @@ canvas.addEventListener('click', e=>{
       const type = $('#matType').value;
       const att = parseFloat($('#matAtt').value|| (MATERIALS[type]?.att||8));
       segments.push({a:{...tempLine.a}, b:{...tempLine.b}, type, att});
-      tempLine=null; setMode('idle'); drawAll(); refreshMatList();
+      tempLine=null; mode='idle'; drawBase(); drawOverlays(); refreshMatList();
     }
   }
 });
 canvas.addEventListener('mousemove', e=>{
   if((mode==='scale' || mode==='mat') && tempLine){
     const {x,y} = getCanvasPos(e);
-    tempLine.b = {x,y}; drawAll();
+    tempLine.b = {x,y}; drawBase(); drawOverlays();
   }
 });
 
 document.addEventListener('keydown', e=>{
-  if(e.key==='s' || e.key==='S') setMode('scale');
-  if(e.key==='a' || e.key==='A') setMode('ap');
-  if(e.key==='w' || e.key==='W') setMode('mat');
+  if(e.key==='s' || e.key==='S') mode='scale';
+  if(e.key==='a' || e.key==='A') mode='ap';
+  if(e.key==='w' || e.key==='W') mode='mat';
   if(e.key==='h' || e.key==='H') renderHeatmap();
 });
 
@@ -562,10 +543,10 @@ document.addEventListener('keydown', e=>{
 (function init(){
   UI.mode='planning';
   UI.legendMin.textContent = RSSI_MIN;
-  UI.legendMax.textContent = RSSI_MAX;
+  UI.legendMax.textContent = theRSSI_MAX;
   makeFixedLegend();
   $('#modePlanning').checked = true;
-  drawAll();
+  drawBase(); drawOverlays();
 })();
 </script>
 </body>
