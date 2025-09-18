@@ -3,12 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Wi-Fi Heatmap — RBF (Gaussian) + Obstacles</title>
+<title>Wi-Fi Heatmap — RBF + Obstacles (Red→Green -90 to -40 dBm)</title>
 <style>
   :root{
     --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
-    --card:#1b2035; --btn:#232845; --ring:#2a7fff55;
-    --danger:#ff7b7b;
+    --card:#1b2035; --btn:#232845; --ring:#2a7fff55; --danger:#ff7b7b;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -37,7 +36,7 @@
   .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
   canvas{background:#0b0f1d;border-radius:12px;border:1px solid #263056;max-width:100%}
   .legend{display:flex;align-items:center;gap:10px}
-  .grad{width:180px;height:12px;border-radius:999px;border:1px solid #2a3156}
+  .grad{width:220px;height:12px;border-radius:999px;border:1px solid #2a3156}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
   .kbd{font-family:ui-monospace,Menlo,Consolas,monospace;background:#222846;border:1px solid #2a3156;border-radius:6px;padding:2px 6px;color:#b9c3ff;font-size:12px}
   .muted{color:var(--muted)}
@@ -50,7 +49,7 @@
 </style>
 </head>
 <body>
-<header><h1>📶 Wi-Fi Heatmap — RBF (Gaussian) + Obstacles</h1></header>
+<header><h1>📶 Wi-Fi Heatmap — RBF + Obstacles (Red→Green)</h1></header>
 
 <div class="container">
   <!-- Left control panel -->
@@ -126,15 +125,6 @@
           <div class="label">โปร่งใสฮีตแมป</div>
           <input type="number" id="alpha" value="0.6" min="0" max="1" step="0.05" />
         </div>
-        <div>
-          <div class="label">พาเลตสี</div>
-          <select id="palette">
-            <option value="turbo" selected>Turbo</option>
-            <option value="viridis">Viridis</option>
-            <option value="inferno">Inferno</option>
-            <option value="jet">Jet</option>
-          </select>
-        </div>
       </div>
       <div class="row" style="margin-top:10px">
         <button id="btnRender">🔥 สร้าง Heatmap (RBF)</button>
@@ -142,8 +132,9 @@
       </div>
       <div class="legend" style="margin-top:10px">
         <div id="grad" class="grad"></div>
-        <div class="small"><span id="legendMin">-100</span> dBm ⟷ <span id="legendMax">-30</span> dBm</div>
+        <div class="small"><span id="legendMin">-90</span> dBm ⟷ <span id="legendMax">-40</span> dBm</div>
       </div>
+      <div class="small muted">โทนสีตายตัว: แดง (−90 dBm) → เขียว (−40 dBm)</div>
     </div>
 
     <div class="section">
@@ -172,6 +163,10 @@
 </div>
 
 <script>
+/* ========= Constants ========= */
+const RSSI_MIN = -90;   // แดง
+const RSSI_MAX = -40;   // เขียว
+
 /* ========= Utilities ========= */
 const $ = sel => document.querySelector(sel);
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
@@ -184,7 +179,6 @@ function getCanvasPos(e){
   const scaleY = canvas.height / rect.height;
   return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY };
 }
-
 function download(filename, data, type="application/json"){
   const blob = new Blob([data], {type});
   const url = URL.createObjectURL(blob);
@@ -204,8 +198,7 @@ const MATERIALS = {
 };
 const matTypeSel = $('#matType');
 for(const k of Object.keys(MATERIALS)){
-  const opt = document.createElement('option');
-  opt.value = k; opt.textContent = MATERIALS[k].name; matTypeSel.appendChild(opt);
+  const opt = document.createElement('option'); opt.value=k; opt.textContent=MATERIALS[k].name; matTypeSel.appendChild(opt);
 }
 matTypeSel.value = 'brick';
 $('#matAtt').value = MATERIALS['brick'].att;
@@ -283,24 +276,25 @@ function drawPoint(p){
   ctx.fillText(label, p.x+10, p.y-8);
 }
 
-/* ========= Palette ========= */
-function makeGradient(palette='turbo'){
+/* ========= Fixed red→green palette (-90 to -40 dBm) ========= */
+// สร้างกราเดียนท์สำหรับ legend
+function makeFixedLegend(){
   const g = $('#grad'); const cvs = document.createElement('canvas');
   cvs.width=256; cvs.height=1; const c=cvs.getContext('2d');
   const gr=c.createLinearGradient(0,0,256,0);
-  const stops = {
-    turbo: [[0,'#30123b'],[0.2,'#4145ae'],[0.4,'#2ec7f0'],[0.6,'#7df87b'],[0.8,'#f4e55c'],[1,'#fb4a2a']],
-    viridis: [[0,'#440154'],[0.25,'#3b528b'],[0.5,'#21918c'],[0.75,'#5dc963'],[1,'#fde725']],
-    inferno: [[0,'#000004'],[0.2,'#2c115f'],[0.4,'#721f81'],[0.6,'#b73779'],[0.8,'#f1605d'],[1,'#fcfdbf']],
-    jet: [[0,'#00007F'],[0.35,'#00FFFF'],[0.5,'#7FFF7F'],[0.65,'#FFFF00'],[1,'#7F0000']]
-  }[palette];
-  for(const [t,col] of stops) gr.addColorStop(t,col);
+  gr.addColorStop(0,'#ff0000'); // red
+  gr.addColorStop(1,'#00ff00'); // green
   c.fillStyle=gr; c.fillRect(0,0,256,1);
   g.style.backgroundImage = `url(${cvs.toDataURL()})`;
-  return (t)=>{ const x=clamp(Math.round(t*255),0,255);
-    const d=c.getImageData(x,0,1,1).data; return `rgba(${d[0]},${d[1]},${d[2]},1)`; };
 }
-let colorAt = makeGradient('turbo');
+// map ค่า RSSI → สีแดงถึงเขียว
+function colorFromRSSI(v){
+  const t = clamp((v - RSSI_MIN) / (RSSI_MAX - RSSI_MIN), 0, 1); // -90→0(red), -40→1(green)
+  const r = Math.round(255*(1-t));
+  const g = Math.round(255*t);
+  const b = 0;
+  return [r,g,b];
+}
 
 /* ========= Geometry: segment intersection ========= */
 function orient(a,b,c){ return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x); }
@@ -324,16 +318,14 @@ function pathObstacleLoss(pFrom, pTo){
 
 /* ========= RBF (Gaussian) — kernel regression + obstacle attenuation ========= */
 function rbfKernel(r, eps){ return Math.exp(- (eps*eps) * r*r); }
-
 function rbfPredict(x,y, pts, eps){
   let num=0, den=0; const P={x,y};
   for(const p of pts){
     const r = Math.hypot(x-p.x, y-p.y);
     const w = rbfKernel(r, eps);
-    const att = pathObstacleLoss(P, p);          // dB ลดทอนจากวัสดุที่ตัดผ่าน
-    const localRssi = p.rssi - att;              // ปรับค่าจุดวัดรายเส้นทาง
-    num += w * localRssi;
-    den += w;
+    const att = pathObstacleLoss(P, p);    // dB ลดทอนจากวัสดุที่ตัดผ่าน
+    const localRssi = p.rssi - att;        // ปรับค่าจุดวัดรายเส้นทาง
+    num += w * localRssi; den += w;
   }
   return num / Math.max(1e-12, den);
 }
@@ -346,13 +338,11 @@ function renderHeatmap(){
   const gridStep = parseInt($('#gridStep').value||'6',10);
   const alpha = clamp(parseFloat($('#alpha').value||'0.6'),0,1);
   const eps = parseFloat($('#epsilon').value||'0.01');
-  colorAt = makeGradient($('#palette').value);
 
-  // ช่วงค่า legend จากข้อมูลจริง (ไม่ได้รวม attenuation เพื่อให้ตีความง่าย)
-  let vmin=+Infinity, vmax=-Infinity;
-  for(const p of points){ vmin=Math.min(vmin,p.rssi); vmax=Math.max(vmax,p.rssi); }
-  UI.legendMin.textContent = vmin.toFixed(0);
-  UI.legendMax.textContent = vmax.toFixed(0);
+  // legend คงที่
+  UI.legendMin.textContent = RSSI_MIN;
+  UI.legendMax.textContent = RSSI_MAX;
+  makeFixedLegend();
 
   drawAll();
 
@@ -362,11 +352,8 @@ function renderHeatmap(){
 
   for(let y=0; y<canvas.height; y+=block){
     for(let x=0; x<canvas.width; x+=block){
-      const val = rbfPredict(x,y,points,eps);
-      const t = clamp((val - vmin) / Math.max(1e-9,(vmax - vmin)), 0,1);
-      const col = colorAt(1-t); // 1-t: ค่าดี (ใกล้ 0 dBm) → สีฟ้า
-      const m = col.match(/rgba\((\d+),(\d+),(\d+),/);
-      const r=+m[1], g=+m[2], b=+m[3];
+      const val = rbfPredict(x,y,points,eps);           // ค่า RSSI คาดการณ์
+      const [r,g,b] = colorFromRSSI(val);               // แปลงเป็นสีแดง→เขียว
 
       for(let yy=0; yy<block; yy++){
         if(y+yy>=canvas.height) break;
@@ -444,13 +431,13 @@ $('#fileInput').addEventListener('change', e=>{
     fitCanvasToImage(img);
     points=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
     UI.scaleLabel.textContent='ยังไม่ตั้ง';
-    drawAll(); refreshPointList(); refreshMatList();
+    drawAll(); refreshPointList(); refreshMatList(); makeFixedLegend();
   };
   img.src = URL.createObjectURL(f);
 });
 $('#btnClear').onclick = ()=>{
   floorImg=null; points=[]; segments=[]; tempLine=null; scale.pxPerMeter=null;
-  UI.scaleLabel.textContent='ยังไม่ตั้ง'; drawAll(); refreshPointList(); refreshMatList();
+  UI.scaleLabel.textContent='ยังไม่ตั้ง'; drawAll(); refreshPointList(); refreshMatList(); makeFixedLegend();
 };
 
 $('#btnScale').onclick = ()=> setMode('scale');
@@ -472,10 +459,9 @@ $('#btnSave').onclick = ()=>{
     gridStep: +($('#gridStep').value||6),
     epsilon: +($('#epsilon').value||0.01),
     alpha: +($('#alpha').value||0.6),
-    palette: $('#palette').value,
     scale: scale.pxPerMeter
   };
-  download('heatmap_project_rbf.json', JSON.stringify(payload,null,2));
+  download('heatmap_project_rbf_fixedpalette.json', JSON.stringify(payload,null,2));
 };
 $('#loadJson').addEventListener('change', e=>{
   const f = e.target.files[0]; if(!f) return;
@@ -487,11 +473,9 @@ $('#loadJson').addEventListener('change', e=>{
       $('#gridStep').value = obj.gridStep ?? 6;
       $('#epsilon').value  = obj.epsilon  ?? 0.01;
       $('#alpha').value    = obj.alpha    ?? 0.6;
-      $('#palette').value  = obj.palette  ?? 'turbo';
       scale.pxPerMeter = obj.scale || null;
       UI.scaleLabel.textContent = scale.pxPerMeter? `${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
-      colorAt = makeGradient($('#palette').value);
-      drawAll(); refreshPointList(); refreshMatList();
+      drawAll(); refreshPointList(); refreshMatList(); makeFixedLegend();
     }catch(err){ alert('ไฟล์ JSON ไม่ถูกต้อง'); }
   };
   reader.readAsText(f);
@@ -544,11 +528,14 @@ document.addEventListener('keydown', e=>{
 
 /* ========= Init ========= */
 (function init(){
-  colorAt = makeGradient('turbo');
+  UI.legendMin.textContent = RSSI_MIN;
+  UI.legendMax.textContent = RSSI_MAX;
+  makeFixedLegend();
   UI.modeBadge.textContent = 'โหมด: ปกติ';
   drawAll();
 })();
 </script>
 </body>
 </html>
+
 
