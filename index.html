@@ -24,8 +24,7 @@
   .label{font-size:13px;color:var(--muted);margin:6px 0 6px}
   .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   input[type="file"],input[type="number"],input[type="text"],select,textarea{
-    background:var(--card);border:1px solid #2a3156;color:var(--text);
-    border-radius:10px;padding:8px 10px;outline:none
+    background:var(--card);border:1px solid #2a3156;color:var(--text);border-radius:10px;padding:8px 10px;outline:none
   }
   textarea{width:100%;min-height:54px;resize:vertical}
   input[type="number"]{width:120px}
@@ -122,7 +121,6 @@
     <div class="section">
       <div class="label">3) วาง Access Point</div>
 
-      <!-- Preset selector -->
       <div class="grid" style="align-items:end">
         <div>
           <div class="label">พรีเซ็ต AP</div>
@@ -156,48 +154,22 @@
         <input type="number" id="lockNValue" value="2.2" step="0.1" title="ค่า n ที่ใช้กับทุก AP เมื่อเปิดล็อก"/>
       </div>
 
-      <!-- AP spec form -->
       <details class="spec" style="margin-top:10px">
         <summary>🧾 รายละเอียดสเปก AP (ต่อ AP ที่จะวาง)</summary>
         <div class="grid-1" style="margin-top:8px">
-          <div class="label">รุ่น/ชื่อผลิตภัณฑ์</div>
-          <input type="text" id="apSpec_model" placeholder="เช่น AX1800 Dual-Band Wi-Fi 6 Router"/>
-
-          <div class="label">ปุ่ม (Buttons)</div>
-          <textarea id="apSpec_buttons" placeholder="Reset, WPS/Wi-Fi, Power On/Off, LED On/Off"></textarea>
-
-          <div class="label">แหล่งจ่ายไฟ (Power)</div>
-          <input type="text" id="apSpec_power" placeholder="12 V ⎓ 1.5 A"/>
-
-          <div class="label">เสาอากาศ (Antenna)</div>
-          <input type="text" id="apSpec_ant" placeholder="4x Fixed High-Performance Antennas"/>
-
-          <div class="label">พอร์ต/อินเทอร์เฟซ (Interface)</div>
-          <textarea id="apSpec_iface" placeholder="1× Gigabit WAN, 4× Gigabit LAN"></textarea>
-
-          <div class="label">มาตรฐาน/ย่านความถี่ (Standards/Frequency)</div>
-          <textarea id="apSpec_standards" placeholder="802.11ax/ac/n/a (5G), 802.11ax/n/b/g (2.4G); Bands: 2.4 & 5 GHz"></textarea>
-
-          <div class="label">อัตราส่งข้อมูล (Signal Rate)</div>
-          <textarea id="apSpec_rate" placeholder="AX1800 — 5G: 1201 Mbps; 2.4G: 574 Mbps"></textarea>
-
-          <div class="label">EIRP / TX / RX Sensitivity</div>
-          <textarea id="apSpec_rf" placeholder="ใส่ EIRP ต่อแบนด์ / RX sensitivity ถ้ามี"></textarea>
-
-          <div class="label">ฟังก์ชัน/ความปลอดภัยไร้สาย</div>
-          <textarea id="apSpec_functions" placeholder="SPI FW, Access Control, IP/MAC Binding, App Layer ..."></textarea>
-
-          <div class="label">ใบรับรอง (Cert.)</div>
-          <input type="text" id="apSpec_cert" placeholder="FCC, CE, RoHS"/>
-
-          <div class="label">ความต้องการระบบ (System Requirements)</div>
-          <textarea id="apSpec_sysreq" placeholder="IE 11+, Firefox 12+, Chrome 20+, Safari 4+ ..."></textarea>
-
-          <div class="label">อุณหภูมิ/ความชื้น (Operating/Storage)</div>
-          <textarea id="apSpec_env" placeholder="0–40°C / −40–70°C • RH 10–90% / 5–90% (non-cond.)"></textarea>
-
-          <div class="label">การรับประกัน / Option / หมายเหตุ</div>
-          <textarea id="apSpec_notes" placeholder="Warranty, LEDs, โหมดทำงาน, USB share, ฯลฯ"></textarea>
+          <div class="label">รุ่น/ชื่อผลิตภัณฑ์</div><input type="text" id="apSpec_model" />
+          <div class="label">ปุ่ม (Buttons)</div><textarea id="apSpec_buttons"></textarea>
+          <div class="label">แหล่งจ่ายไฟ (Power)</div><input type="text" id="apSpec_power" />
+          <div class="label">เสาอากาศ (Antenna)</div><input type="text" id="apSpec_ant" />
+          <div class="label">พอร์ต/อินเทอร์เฟซ (Interface)</div><textarea id="apSpec_iface"></textarea>
+          <div class="label">มาตรฐาน/ย่านความถี่ (Standards/Frequency)</div><textarea id="apSpec_standards"></textarea>
+          <div class="label">อัตราส่งข้อมูล (Signal Rate)</div><textarea id="apSpec_rate"></textarea>
+          <div class="label">EIRP / TX / RX Sensitivity</div><textarea id="apSpec_rf"></textarea>
+          <div class="label">ฟังก์ชัน/ความปลอดภัยไร้สาย</div><textarea id="apSpec_functions"></textarea>
+          <div class="label">ใบรับรอง (Cert.)</div><input type="text" id="apSpec_cert" />
+          <div class="label">ความต้องการระบบ (System Requirements)</div><textarea id="apSpec_sysreq"></textarea>
+          <div class="label">อุณหภูมิ/ความชื้น (Operating/Storage)</div><textarea id="apSpec_env"></textarea>
+          <div class="label">การรับประกัน / Option / หมายเหตุ</div><textarea id="apSpec_notes"></textarea>
         </div>
       </details>
 
@@ -213,14 +185,8 @@
     <div class="section">
       <div class="label">4) วัสดุ/สิ่งกีดขวาง</div>
       <div class="grid">
-        <div>
-          <div class="label">ชนิดวัสดุ</div>
-          <select id="matType"></select>
-        </div>
-        <div>
-          <div class="label">การดูดกลืน (dB/ครั้ง)</div>
-          <input type="number" id="matAtt" value="8" step="0.5"/>
-        </div>
+        <div><div class="label">ชนิดวัสดุ</div><select id="matType"></select></div>
+        <div><div class="label">การดูดกลืน (dB/ครั้ง)</div><input type="number" id="matAtt" value="8" step="0.5"/></div>
       </div>
       <div class="row" style="margin-top:8px)">
         <button id="btnMat">🧱 โหมดวัสดุ (กดค้าง–ลาก–ปล่อย)</button>
@@ -233,14 +199,8 @@
     <div class="section">
       <div class="label">5) ตั้งค่าเรนเดอร์</div>
       <div class="grid">
-        <div>
-          <div class="label">ความเนียน Blur (px)</div>
-          <input type="number" id="blurPx" value="16" min="0" step="1"/>
-        </div>
-        <div>
-          <div class="label">โปร่งใสฮีตแมป</div>
-          <input type="number" id="alpha" value="0.6" min="0" max="1" step="0.05"/>
-        </div>
+        <div><div class="label">ความเนียน Blur (px)</div><input type="number" id="blurPx" value="16" min="0" step="1"/></div>
+        <div><div class="label">โปร่งใสฮีตแมป</div><input type="number" id="alpha" value="0.6" min="0" max="1" step="0.05"/></div>
       </div>
       <div class="row" style="margin-top:10px">
         <button id="btnRender">🔥 สร้าง Heatmap</button>
@@ -270,7 +230,6 @@
       <span class="badge" id="modeBadge">โหมด: Idle</span>
       <span class="muted small">สเกล/วัสดุ = กดค้าง–ลาก–ปล่อย | AP = คลิก | Probe = คลิกหลังเรนเดอร์</span>
     </div>
-
     <div class="stage" id="stage">
       <canvas id="canvas" width="1280" height="800"></canvas>
       <canvas id="overlay" width="1280" height="800"></canvas>
@@ -282,7 +241,6 @@
   </main>
 </div>
 
-<!-- Survey mode placeholder -->
 <div class="container" id="appSurvey" style="display:none;grid-template-columns:1fr">
   <main class="panel" style="display:flex;flex-direction:column;gap:12px">
     <div class="row">
@@ -294,67 +252,73 @@
 </div>
 
 <script>
-/* ===== App presets: AP models (2 ตัวตามที่ให้มา) ===== */
+/* ===== AP presets (2 รุ่นตามที่ให้) ===== */
 const AP_PRESETS = {
   "tplink_ax20": {
     name: "TP-Link Archer AX20 (AX1800 Wi-Fi 6)",
-    defaults: { p0: -40, n: 2.2 }, // ปรับได้ตามคาลิเบรต
+    defaults: { p0: -40, n: 2.2 },
     spec: {
-      model: "Archer AX20 AX1800 Wi-Fi 6 Router",
-      buttons: "Reset, WPS/Wi-Fi, Power On/Off, LED On/Off",
-      power: "12 V ⎓ 1.5 A",
-      antenna: "4× Fixed High-Performance Antennas (beamforming)",
-      iface: "1× Gigabit WAN, 4× Gigabit LAN",
-      standards: "Wi-Fi 6; IEEE 802.11ax/ac/n/a (5 GHz); IEEE 802.11ax/n/b/g (2.4 GHz); Bands: 2.4 & 5 GHz",
-      rate: "AX1800 — 5 GHz: 1201 Mbps (802.11ax); 2.4 GHz: 574 Mbps (802.11ax)",
-      rf: "Reception Sensitivity: N/A",
-      functions: "SPI Firewall, Access Control, IP & MAC Binding, Application Layer features",
-      cert: "FCC, CE, RoHS",
-      sysreq: "IE 11+, Firefox 12+, Chrome 20+, Safari 4+",
-      env: "Operating: 0–40°C; Storage: −40–70°C; RH 10–90% / 5–90% (non-cond.)",
-      notes: "Warranty: Lifetime; Options: N/A; Dimensions: 260.2×135×38.6 mm"
+      model:"Archer AX20 AX1800 Wi-Fi 6 Router",
+      buttons:"Reset, WPS/Wi-Fi, Power On/Off, LED On/Off",
+      power:"12 V ⎓ 1.5 A",
+      antenna:"4× Fixed High-Performance Antennas (beamforming)",
+      iface:"1× Gigabit WAN, 4× Gigabit LAN",
+      standards:"Wi-Fi 6; IEEE 802.11ax/ac/n/a (5 GHz); IEEE 802.11ax/n/b/g (2.4 GHz); Bands: 2.4 & 5 GHz",
+      rate:"AX1800 — 5 GHz: 1201 Mbps; 2.4 GHz: 574 Mbps",
+      rf:"Reception Sensitivity: N/A",
+      functions:"SPI Firewall, Access Control, IP & MAC Binding, Application Layer features",
+      cert:"FCC, CE, RoHS",
+      sysreq:"IE 11+, Firefox 12+, Chrome 20+, Safari 4+",
+      env:"Operating 0–40°C; Storage −40–70°C; RH 10–90% / 5–90% (non-cond.)",
+      notes:"Warranty: Lifetime; Dimensions: 260.2×135×38.6 mm"
     }
   },
   "totolink_a3002ru": {
     name: "TOTOLINK A3002RU (AC1200)",
-    defaults: { p0: -42, n: 2.4 }, // ตัวอย่างค่าเริ่ม (ปรับได้)
+    defaults: { p0: -42, n: 2.4 },
     spec: {
-      model: "TOTOLINK A3002RU",
-      buttons: "RST, WPS, Power On/Off",
-      power: "12 V DC ⎓ 2 A",
-      antenna: "2×5 dBi (2.4G) + 2×5 dBi (5G) Fixed Antennas",
-      iface: "4× 1000M LAN, 1× 1000M WAN, 1× USB 2.0",
-      standards: "IEEE 802.11ac/n/g/b/a; Dual-Band 2.4/5 GHz",
-      rate: "AC1200 — 2.4G: up to 300 Mbps; 5G: up to 867 Mbps",
-      rf: "EIRP: 2.4G < 20 dBm; 5G < 23 dBm\nRX sens.: 2.4G — 11b: ≤-79 dBm; 11g: ≤-68 dBm; 11n: HT20 ≤-65 dBm; HT40 ≤-61 dBm\n5G — 11a: ≤-68 dBm; 11ac: HT20 ≤-65 dBm; HT40 ≤-61 dBm; HT80 ≤-51 dBm",
-      functions: "Wireless ISP/Client, Repeater, Router, Bridge with AP, Client; WEP/WPA/WPA2, Multiple APs, WDS, WPS, Access Control; SPI FW, MAC/IP/Port/URL filtering; QoS, TR-069, DDNS, DoS, SNMP",
-      cert: "—",
-      sysreq: "—",
-      env: "—",
-      notes: "LEDs: Power, CPU, 2.4G, 5G, WAN, 4×LAN, USB; Package: Router, PSU, Ethernet, QIG"
+      model:"TOTOLINK A3002RU",
+      buttons:"RST, WPS, Power On/Off",
+      power:"12 V DC ⎓ 2 A",
+      antenna:"2×5 dBi (2.4G) + 2×5 dBi (5G) Fixed",
+      iface:"4× 1000M LAN, 1× 1000M WAN, 1× USB 2.0",
+      standards:"IEEE 802.11ac/n/g/b/a; Dual-Band 2.4/5 GHz",
+      rate:"2.4G: up to 300 Mbps; 5G: up to 867 Mbps (AC1200)",
+      rf:"EIRP 2.4G <20 dBm; 5G <23 dBm\nRX sens. 2.4G: 11b≤−79, 11g≤−68, 11n HT20≤−65 / HT40≤−61 dBm\n5G: 11a≤−68, 11ac HT20≤−65 / HT40≤−61 / HT80≤−51 dBm",
+      functions:"WISP/Client, Repeater, Router, Bridge w/ AP, Client; WEP/WPA/WPA2; Multiple APs, WDS, WPS; ACL; SPI FW; QoS; TR-069; DDNS; DoS; SNMP",
+      cert:"—", sysreq:"—", env:"—",
+      notes:"LEDs: Power, CPU, 2.4G, 5G, WAN, 4×LAN, USB"
     }
   }
 };
 
-/* ===== app mode switch ===== */
+/* ===== Mode switch ===== */
 let appMode='planning';
-const modePicker=$('#modePicker');
-const appPlanning=$('#appPlanning');
-const appSurvey=$('#appSurvey');
-$('#pillPlanning').onclick=()=>setMode('planning');
-$('#pillSurvey').onclick=()=>setMode('survey');
-$('#pickPlanning').onclick=()=>setMode('planning');
-$('#pickSurvey').onclick=()=>setMode('survey');
+const modePicker=document.getElementById('modePicker');
+const appPlanning=document.getElementById('appPlanning');
+const appSurvey=document.getElementById('appSurvey');
+const pillPlanning=document.getElementById('pillPlanning');
+const pillSurvey=document.getElementById('pillSurvey');
+const pickPlanning=document.getElementById('pickPlanning');
+const pickSurvey=document.getElementById('pickSurvey');
+
 function setMode(mode){
   appMode=mode;
-  if(mode==='planning'){ appPlanning.style.display='grid'; appSurvey.style.display='none';
-    $('#pillPlanning').classList.add('active'); $('#pillSurvey').classList.remove('active');
-  }else{ appPlanning.style.display='none'; appSurvey.style.display='grid';
-    $('#pillPlanning').classList.remove('active'); $('#pillSurvey').classList.add('active'); }
+  if(mode==='planning'){
+    appPlanning.style.display='grid'; appSurvey.style.display='none';
+    pillPlanning.classList.add('active'); pillSurvey.classList.remove('active');
+  }else{
+    appPlanning.style.display='none'; appSurvey.style.display='grid';
+    pillPlanning.classList.remove('active'); pillSurvey.classList.add('active');
+  }
   modePicker.style.display='none';
 }
+pillPlanning.onclick=()=>setMode('planning');
+pillSurvey.onclick=()=>setMode('survey');
+pickPlanning.onclick=()=>setMode('planning');
+pickSurvey.onclick=()=>setMode('survey');
 
-/* ===== thresholds & utilities ===== */
+/* ===== thresholds & utils ===== */
 const RSSI_MIN=-80, P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
 const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
 const $=s=>document.querySelector(s);
@@ -363,79 +327,70 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const lerp=(a,b,t)=>a+(b-a)*t;
 const mixColor=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
 
-/* ===== canvases & state ===== */
-const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
-const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
+/* ===== canvas & state ===== */
+const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
+const overlay=document.getElementById('overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
 let floorImg=null, floorScale=0.75;
 let aps=[], segments=[];
 let mode='idle', dragging=false, dragStart=null;
 let scale={pxPerMeter:null}, hasRendered=false;
 
-/* lock n */
+/* lock-n */
 let lockN=false, lockNValue=2.2;
-const lockNEl=$('#lockN'), lockNValueEl=$('#lockNValue');
 
 /* UI refs */
 const UI={
-  modeBadge:$('#modeBadge'), scaleLabel:$('#scaleLabel'),
-  apList:$('#apList'), matList:$('#matList'),
-  probe:$('#probe'), probeVal:$('#probeVal'), probeMeta:$('#probeMeta'), probeSw:$('#sw'),
-  stage:$('#stage'),
-  imgScale:$('#imgScale'), imgScaleNum:$('#imgScaleNum'),
-  apPreset:$('#apPreset')
+  modeBadge:document.getElementById('modeBadge'),
+  scaleLabel:document.getElementById('scaleLabel'),
+  apList:document.getElementById('apList'),
+  matList:document.getElementById('matList'),
+  probe:document.getElementById('probe'),
+  probeVal:document.getElementById('probeVal'),
+  probeMeta:document.getElementById('probeMeta'),
+  probeSw:document.getElementById('sw'),
+  stage:document.getElementById('stage'),
+  imgScale:document.getElementById('imgScale'),
+  imgScaleNum:document.getElementById('imgScaleNum'),
+  apPreset:document.getElementById('apPreset')
 };
 
-/* ===== Preset selector setup ===== */
+/* ===== Preset selector ===== */
 (function initApPreset(){
-  // เติมตัวเลือก
-  for(const key of Object.keys(AP_PRESETS)){
-    const o=document.createElement('option');
-    o.value=key; o.textContent=AP_PRESETS[key].name;
+  Object.keys(AP_PRESETS).forEach(key=>{
+    const o=document.createElement('option'); o.value=key; o.textContent=AP_PRESETS[key].name;
     UI.apPreset.appendChild(o);
-  }
-  // ปุ่มเติมจากพรีเซ็ต
-  $('#btnApplyPreset').addEventListener('click', ()=>{
-    const key=UI.apPreset.value; const p=AP_PRESETS[key]; if(!p) return;
-    // ตั้งชื่อ SSID เบื้องต้นเป็นรุ่น + running number
-    const num = aps.length+1;
-    $('#apLabel').value = `${p.name.split('(')[0].trim()}-${num}`;
-    // ตั้ง P0 / n ค่าเริ่มจากพรีเซ็ต (แก้ไขต่อได้)
-    $('#apP0').value = p.defaults?.p0 ?? -40;
-    $('#apN').value  = p.defaults?.n  ?? 2.2;
-    // เติมฟอร์มสเปก
+  });
+  document.getElementById('btnApplyPreset').addEventListener('click', ()=>{
+    const key=UI.apPreset.value, p=AP_PRESETS[key]; if(!p) return;
+    const num=aps.length+1;
+    document.getElementById('apLabel').value = `${p.name.split('(')[0].trim()}-${num}`;
+    document.getElementById('apP0').value = p.defaults?.p0 ?? -40;
+    document.getElementById('apN').value  = p.defaults?.n  ?? 2.2;
     const s=p.spec||{};
-    $('#apSpec_model').value=s.model||'';
-    $('#apSpec_buttons').value=s.buttons||'';
-    $('#apSpec_power').value=s.power||'';
-    $('#apSpec_ant').value=s.antenna||'';
-    $('#apSpec_iface').value=s.iface||'';
-    $('#apSpec_standards').value=s.standards||'';
-    $('#apSpec_rate').value=s.rate||'';
-    $('#apSpec_rf').value=s.rf||'';
-    $('#apSpec_functions').value=s.functions||'';
-    $('#apSpec_cert').value=s.cert||'';
-    $('#apSpec_sysreq').value=s.sysreq||'';
-    $('#apSpec_env').value=s.env||'';
-    $('#apSpec_notes').value=s.notes||'';
+    document.getElementById('apSpec_model').value=s.model||'';
+    document.getElementById('apSpec_buttons').value=s.buttons||'';
+    document.getElementById('apSpec_power').value=s.power||'';
+    document.getElementById('apSpec_ant').value=s.antenna||'';
+    document.getElementById('apSpec_iface').value=s.iface||'';
+    document.getElementById('apSpec_standards').value=s.standards||'';
+    document.getElementById('apSpec_rate').value=s.rate||'';
+    document.getElementById('apSpec_rf').value=s.rf||'';
+    document.getElementById('apSpec_functions').value=s.functions||'';
+    document.getElementById('apSpec_cert').value=s.cert||'';
+    document.getElementById('apSpec_sysreq').value=s.sysreq||'';
+    document.getElementById('apSpec_env').value=s.env||'';
+    document.getElementById('apSpec_notes').value=s.notes||'';
   });
 })();
 
-/* ===== helpers for spec ===== */
+/* ===== spec helpers ===== */
 function getAPSpecFromForm(){
+  const g=id=>document.getElementById(id).value.trim();
   return {
-    model:$('#apSpec_model').value.trim(),
-    buttons:$('#apSpec_buttons').value.trim(),
-    power:$('#apSpec_power').value.trim(),
-    antenna:$('#apSpec_ant').value.trim(),
-    iface:$('#apSpec_iface').value.trim(),
-    standards:$('#apSpec_standards').value.trim(),
-    rate:$('#apSpec_rate').value.trim(),
-    rf:$('#apSpec_rf').value.trim(),
-    functions:$('#apSpec_functions').value.trim(),
-    cert:$('#apSpec_cert').value.trim(),
-    sysreq:$('#apSpec_sysreq').value.trim(),
-    env:$('#apSpec_env').value.trim(),
-    notes:$('#apSpec_notes').value.trim(),
+    model:g('apSpec_model'), buttons:g('apSpec_buttons'), power:g('apSpec_power'),
+    antenna:g('apSpec_ant'), iface:g('apSpec_iface'), standards:g('apSpec_standards'),
+    rate:g('apSpec_rate'), rf:g('apSpec_rf'), functions:g('apSpec_functions'),
+    cert:g('apSpec_cert'), sysreq:g('apSpec_sysreq'), env:g('apSpec_env'), notes:g('apSpec_notes')
   };
 }
 function specToPrettyText(spec){
@@ -480,8 +435,8 @@ function drawBase(){
 function drawPermanent(){
   ctx.lineWidth=3;
   segments.forEach(s=>{
-    ctx.strokeStyle=(MATERIALS[s.type]||{color:'#fff'}).color;
-    ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
+    const color=(MATERIALS[s.type]||{color:'#fff'}).color;
+    ctx.strokeStyle=color; ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
   });
   aps.forEach(a=>{
     ctx.fillStyle='#8fd3ff'; ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
@@ -493,7 +448,7 @@ function drawPermanent(){
   });
 }
 
-/* overlay helpers */
+/* overlay */
 function clearOverlay(){ octx.clearRect(0,0,overlay.width,overlay.height); }
 function drawArrow(a,b,opts={}){
   const {color='#6ae3ff',width=3.5,head=12,dash=[10,6],label=''}=opts;
@@ -512,18 +467,15 @@ function drawArrow(a,b,opts={}){
 
 /* legend & color */
 function makeFixedLegend(){
-  const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
+  const g=document.getElementById('grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
   const c=cvs.getContext('2d');
   const span1=P_GRAY-RSSI_MIN, span2=P_YELLOW-P_GRAY, span3=P_GREEN-P_YELLOW;
   const usable=240, s=usable/(span1+span2+span3);
   const px1=Math.round(span1*s), px2=Math.round(span2*s), px3=Math.round(span3*s), pxG=256-(px1+px2+px3);
   let x=0;
-  for(let i=0;i<px1;i++,x++){ const t=i/(px1||1); const col=mixColor(GRAY_LIGHT,GRAY_BASE,t);
-    c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
-  for(let i=0;i<px2;i++,x++){ const t=i/(px2||1); const col=mixColor(GRAY_BASE,[255,255,0],t);
-    c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
-  for(let i=0;i<px3;i++,x++){ const t=i/(px3||1); const col=mixColor([255,255,0],[0,255,0],t);
-    c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
+  for(let i=0;i<px1;i++,x++){ const t=i/(px1||1), col=mixColor(GRAY_LIGHT,GRAY_BASE,t); c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
+  for(let i=0;i<px2;i++,x++){ const t=i/(px2||1), col=mixColor(GRAY_BASE,[255,255,0],t); c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
+  for(let i=0;i<px3;i++,x++){ const t=i/(px3||1), col=mixColor([255,255,0],[0,255,0],t); c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
   c.fillStyle=`rgb(0,255,0)`; c.fillRect(x,0,pxG,1);
   g.style.backgroundImage=`url(${cvs.toDataURL()})`;
 }
@@ -560,11 +512,10 @@ const MATERIALS={
   metal:{name:'โลหะแผ่น/ประตูเหล็ก',color:'#ffd36a',att:20},
   human:{name:'ร่างกายคน (เฉลี่ย)',color:'#d6b3ff',att:3}
 };
-const matTypeSel=$('#matType'); for(const k of Object.keys(MATERIALS)){
-  const o=document.createElement('option'); o.value=k; o.textContent=MATERIALS[k].name; matTypeSel.appendChild(o);
-}
-matTypeSel.value='brick'; $('#matAtt').value=MATERIALS['brick'].att;
-matTypeSel.addEventListener('change',()=>$('#matAtt').value=MATERIALS[matTypeSel.value].att);
+const matTypeSel=document.getElementById('matType');
+Object.keys(MATERIALS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=MATERIALS[k].name; matTypeSel.appendChild(o); });
+matTypeSel.value='brick'; document.getElementById('matAtt').value=MATERIALS['brick'].att;
+matTypeSel.addEventListener('change',()=>document.getElementById('matAtt').value=MATERIALS[matTypeSel.value].att);
 
 /* RSSI model */
 function rssiFromAPs(x,y){
@@ -583,8 +534,8 @@ function rssiFromAPs(x,y){
 /* render */
 function renderHeatmap(){
   if(!floorImg||aps.length===0) return;
-  const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
-  const blurPx=Math.max(0,parseInt($('#blurPx').value||'16',10));
+  const alpha=clamp(parseFloat(document.getElementById('alpha').value||'0.6'),0,1);
+  const blurPx=Math.max(0,parseInt(document.getElementById('blurPx').value||'16',10));
   makeFixedLegend(); drawBase();
   const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
   const hctx=heat.getContext('2d',{willReadFrequently:true});
@@ -601,7 +552,7 @@ function renderHeatmap(){
 }
 
 /* probe */
-function showProbeAt(x,y,rect){
+function showProbeAt(x,y){
   ctx.save(); ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.globalAlpha=.9; ctx.fill();
   ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke(); ctx.restore();
   const rssi=rssiFromAPs(x,y), col=colorFromRSSI(rssi);
@@ -659,36 +610,38 @@ function refreshMatList(){
 }
 
 /* toolbar */
-$('#btnScale').onclick=()=>{ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); };
-$('#btnAP').onclick=()=>{ mode='ap'; UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
-$('#btnMat').onclick=()=>{ mode='mat'; UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
+document.getElementById('btnScale').onclick=()=>{ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); };
+document.getElementById('btnAP').onclick=()=>{ mode='ap'; UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
+document.getElementById('btnMat').onclick=()=>{ mode='mat'; UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
 
-$('#btnAPUndo').onclick=()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
-$('#btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
+document.getElementById('btnAPUndo').onclick=()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
+document.getElementById('btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
 
-$('#btnMatUndo').onclick=()=>{ segments.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
-$('#btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); } };
+document.getElementById('btnMatUndo').onclick=()=>{ segments.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
+document.getElementById('btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); } };
 
-$('#btnRender').onclick=()=>{ renderHeatmap(); hideProbe(); };
-$('#btnExport').onclick=()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
+document.getElementById('btnRender').onclick=()=>{ renderHeatmap(); hideProbe(); };
+document.getElementById('btnExport').onclick=()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
 
 /* Save/Load */
-$('#btnSave').onclick=()=>{
+document.getElementById('btnSave').onclick=()=>{
   const payload={ aps, segments,
-    alpha:+($('#alpha').value||0.6), blurPx:+($('#blurPx').value||16),
+    alpha:+(document.getElementById('alpha').value||0.6),
+    blurPx:+(document.getElementById('blurPx').value||16),
     scale:scale.pxPerMeter, floorScale, lockN, lockNValue };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
   a.href=url; a.download='heatmap_project_planning.json'; a.click(); URL.revokeObjectURL(url);
 };
-$('#loadJson').addEventListener('change', e=>{
+document.getElementById('loadJson').addEventListener('change', e=>{
   const f=e.target.files[0]; if(!f) return;
   const reader=new FileReader();
   reader.onload=()=>{ try{
       const obj=JSON.parse(reader.result);
       aps=(obj.aps||[]).map(a=>({ ...a, spec:a.spec||{} }));
       segments=obj.segments||[];
-      $('#alpha').value=obj.alpha??0.6; $('#blurPx').value=obj.blurPx??16;
+      document.getElementById('alpha').value=obj.alpha??0.6;
+      document.getElementById('blurPx').value=obj.blurPx??16;
       scale.pxPerMeter=obj.scale||null; floorScale=clamp(obj.floorScale ?? floorScale,0.2,1.5);
       lockN=!!obj.lockN; lockNValue=parseFloat(obj.lockNValue ?? 2.2); syncLockNUI();
       UI.imgScale.value=Math.round(floorScale*100); UI.imgScaleNum.value=Math.round(floorScale*100);
@@ -699,18 +652,23 @@ $('#loadJson').addEventListener('change', e=>{
 });
 
 /* image I/O */
-$('#fileInput').addEventListener('change', e=>{
+document.getElementById('fileInput').addEventListener('change', e=>{
   const f=e.target.files[0]; if(!f) return;
   const img=new Image(); img.onload=()=>{ floorImg=img; fitCanvasToImage(img); drawBase(); drawPermanent(); };
   img.src=URL.createObjectURL(f);
 });
-$('#btnClear').onclick=()=>{ floorImg=null; drawBase(); drawPermanent(); };
+document.getElementById('btnClear').onclick=()=>{ floorImg=null; drawBase(); drawPermanent(); };
 
-/* drag ops */
+/* drag on canvas */
+function getCanvasPos(e){
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
+  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY, rect };
+}
 function startDrag(x,y){ dragging=true; dragStart={x,y}; clearOverlay(); }
 function updateDrag(x,y){
   if(!dragging||!dragStart) return; clearOverlay();
-  const label=(mode==='scale')?`${dist(dragStart,{x,y}).toFixed(1)} px`:`${MATERIALS[$('#matType').value]?.name||'วัสดุ'} · ${($('#matAtt').value||'0')} dB`;
+  const label=(mode==='scale')?`${dist(dragStart,{x,y}).toFixed(1)} px`:`${MATERIALS[document.getElementById('matType').value]?.name||'วัสดุ'} · ${(document.getElementById('matAtt').value||'0')} dB`;
   drawArrow(dragStart,{x,y},{color:(mode==='scale')?'#6ae3ff':'#ffd36a',label});
 }
 function endDrag(x,y){
@@ -721,7 +679,7 @@ function endDrag(x,y){
     if(real && +real>0){ scale.pxPerMeter=Lpx/(+real); UI.scaleLabel.textContent=`${scale.pxPerMeter.toFixed(1)} px/เมตร`; }
     mode='idle'; UI.modeBadge.textContent='โหมด: Idle'; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
   }else if(mode==='mat'){
-    const type=$('#matType').value, att=parseFloat($('#matAtt').value || (MATERIALS[type]?.att||8));
+    const type=document.getElementById('matType').value, att=parseFloat(document.getElementById('matAtt').value || (MATERIALS[type]?.att||8));
     segments.push({a,b,type,att}); mode='idle'; UI.modeBadge.textContent='โหมด: Idle';
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
   }
@@ -733,26 +691,22 @@ canvas.addEventListener('mouseup', e=>{ if(appMode!=='planning') return; const {
 canvas.addEventListener('mouseleave', ()=>{ if(appMode!=='planning') return; dragging=false; dragStart=null; clearOverlay(); });
 
 /* click for AP / probe */
-function getCanvasPos(e){
-  const rect=canvas.getBoundingClientRect();
-  const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
-  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY, rect };
-}
 canvas.addEventListener('click', e=>{
   if(appMode!=='planning') return;
-  const {x,y,rect}=getCanvasPos(e);
+  const {x,y}=getCanvasPos(e);
   if(mode==='ap'){
     if(!scale.pxPerMeter) return;
-    const label=$('#apLabel').value.trim()||`AP-${aps.length+1}`;
-    const p0=parseFloat($('#apP0').value||'-40');
-    const n=lockN?lockNValue:parseFloat($('#apN').value||'2.2');
+    const label=(document.getElementById('apLabel').value.trim()||`AP-${aps.length+1}`);
+    const p0=parseFloat(document.getElementById('apP0').value||'-40');
+    const n =(document.getElementById('lockN').checked? parseFloat(document.getElementById('lockNValue').value||'2.2')
+                                                    : parseFloat(document.getElementById('apN').value||'2.2'));
     const spec=getAPSpecFromForm();
     aps.push({x,y,label,p0,n,spec});
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList();
-  }else if(mode==='idle'){ if(!hasRendered) return; renderHeatmap(); showProbeAt(x,y,rect); }
+  }else if(mode==='idle'){ if(!hasRendered) return; renderHeatmap(); showProbeAt(x,y); }
 });
 
-/* keyboard */
+/* keyboard (ครบวงเล็บ/กาปิดแน่นอน) */
 document.addEventListener('keydown', e=>{
   if(appMode!=='planning') return;
   if(e.key==='s'||e.key==='S'){ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); }
@@ -761,14 +715,14 @@ document.addEventListener('keydown', e=>{
   if(e.key==='h'||e.key==='H'){ renderHeatmap(); hideProbe(); }
 });
 
-/* lockN sync */
+/* lock-n sync */
 function syncLockNUI(){
-  if(!lockNEl||!lockNValueEl) return;
-  lockNEl.checked=lockN; lockNValueEl.value=lockNValue;
-  const apNInput=$('#apN'); if(apNInput) apNInput.disabled=lockN;
+  const apNInput=document.getElementById('apN');
+  const lockEl=document.getElementById('lockN'), valEl=document.getElementById('lockNValue');
+  lockN=lockEl.checked; lockNValue=parseFloat(valEl.value||'2.2'); if(apNInput) apNInput.disabled=lockN;
 }
-lockNEl?.addEventListener('change', ()=>{ lockN=lockNEl.checked; lockNValue=parseFloat(lockNValueEl.value||'2.2'); syncLockNUI(); if(hasRendered) renderHeatmap(); });
-lockNValueEl?.addEventListener('input', ()=>{ lockNValue=parseFloat(lockNValueEl.value||'2.2'); if(lockN&&hasRendered) renderHeatmap(); });
+document.getElementById('lockN')?.addEventListener('change', ()=>{ syncLockNUI(); if(hasRendered) renderHeatmap(); });
+document.getElementById('lockNValue')?.addEventListener('input', ()=>{ syncLockNUI(); if(document.getElementById('lockN').checked && hasRendered) renderHeatmap(); });
 
 /* floor scale controls */
 function setFloorScaleFromInput(v){
@@ -779,10 +733,17 @@ function setFloorScaleFromInput(v){
 UI.imgScale.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 UI.imgScaleNum.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 
-/* materials UI already set above */
-
 /* init */
-(function init(){ applyCanvasCSSSize(); syncLockNUI(); drawBase(); drawPermanent(); })();
+(function init(){
+  applyCanvasCSSSize();
+  // เติม materials ลง select แล้วอัปเดตป้าย
+  UI.scaleLabel.textContent='ยังไม่ตั้ง';
+  // เข้าโหมด Planning อัตโนมัติ (แก้เคสคลิกไม่ได้)
+  setMode('planning');
+  drawBase(); drawPermanent();
+  // เติมพรีเซ็ตครั้งแรกเพื่อดูตัวอย่าง
+  UI.apPreset.value='tplink_ax20';
+})();
 </script>
 </body>
 </html>
