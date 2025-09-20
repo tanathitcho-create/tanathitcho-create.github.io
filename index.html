@@ -547,7 +547,8 @@ function renderHeatmap(){
   if(!floorImg||aps.length===0) return;
   const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
   const blurPx=Math.max(0,parseInt($('#blurPx').value||'16',10));
-  makeFixedLegend(); drawBase();
+  makeFixedLegend();
+  drawBase();
 
   const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
   const hctx=heat.getContext('2d',{willReadFrequently:true});
@@ -563,10 +564,24 @@ function renderHeatmap(){
   }
   hctx.putImageData(img,0,0);
 
-  ctx.save(); ctx.globalAlpha=alpha; if(blurPx>0) ctx.filter=`blur(${blurPx}px)`; ctx.drawImage(heat,0,0); ctx.filter='none'; ctx.restore();
+  // วาดฮีตแมปก่อน
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  if(blurPx>0) ctx.filter=`blur(${blurPx}px)`;
+  ctx.drawImage(heat,0,0);
+  ctx.filter='none';
+  ctx.restore();
 
+  // วาดผนัง/วัสดุ/AP
+  drawPermanent();
+
+  // *** วาดคอนทัวร์ทีหลังสุด ให้ลอยอยู่เหนือผนัง ***
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
   drawContours(field, heat.width, heat.height, CONTOUR_LEVELS, CONTOUR_STEP);
-  drawPermanent(); hasRendered=true;
+  ctx.restore();
+
+  hasRendered=true;
 }
 
 /* ===== probe ===== */
