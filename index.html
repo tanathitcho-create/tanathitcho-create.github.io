@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Wi-Fi Heatmap — Normalized + Contours</title>
+<title>Wi-Fi Heatmap — Normalized + Contours + Snap Walls</title>
 <style>
   :root{ --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
          --card:#1b2035; --btn:#232845; --ring:#2a7fff55; --danger:#ff7b7b; }
@@ -141,10 +141,19 @@
         <div><div class="label">ชนิดวัสดุ</div><select id="matType"></select></div>
         <div><div class="label">การดูดกลืน (ดB/ครั้ง)</div><input type="number" id="matAtt" value="8" step="0.5"/></div>
       </div>
-      <div class="row" style="margin-top:8px)">
+      <div class="row" style="margin-top:8px">
         <button id="btnMat">🧱 โหมดวัสดุ (กดค้าง–ลาก–ปล่อย)</button>
         <button id="btnMatUndo" class="ghost">↩️ ลบเส้นล่าสุด</button>
         <button id="btnMatClear" class="danger">🗑️ ล้างวัสดุทั้งหมด</button>
+      </div>
+      <!-- NEW: Snap controls -->
+      <div class="row" style="margin-top:8px">
+        <label class="small">
+          <input type="checkbox" id="snapEnabled" checked/>
+          สแน็ปปลายเส้นวัสดุให้ชน-ล็อกกัน
+        </label>
+        <span class="small muted">รัศมี (px):</span>
+        <input type="number" id="snapRadius" value="12" min="4" max="40" step="1" style="width:70px"/>
       </div>
       <div id="matList" style="margin-top:10px;display:grid;gap:6px;"></div>
     </div>
@@ -210,7 +219,7 @@
 </div>
 
 <script>
-/* ===== Presets (ตัวอย่าง 2 รุ่น) ===== */
+/* ===== AP Presets (ตัวอย่าง 2 รุ่น) ===== */
 const AP_PRESETS = {
   tplink_ax20: {
     name: "TP-Link Archer AX20 (AX1800 Wi-Fi 6)",
@@ -260,9 +269,9 @@ function setApp(mode){
 pillPlanning.onclick=()=>setApp('planning');
 pillSurvey.onclick=()=>setApp('survey');
 
-/* ===== constants (Ekahau-like + colors) ===== */
+/* ===== constants ===== */
 const RSSI_MIN=-80, P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
-const N_BY_BAND = { '2.4': 2.2, '5': 2.4 };
+const N_BY_BAND = { '2.4': 2.2, '5': 2.4 }; // Ekahau-like fixed n per band
 const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
 const CONTOUR_LEVELS = [ -20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70,-75,-80 ];
 const CONTOUR_STEP=2;
@@ -277,10 +286,10 @@ const clamp01=v=>Math.max(0,Math.min(1,v));
 /* ===== canvas & state ===== */
 const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
 const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
-let floorImg=null, floorScale=0.75; // 0.2..1.5 (จากสไลเดอร์)
+let floorImg=null, floorScale=0.75; // 0.2..1.5
 let aps=[], segments=[];
 let mode='idle', dragging=false, dragStart=null;
-let scale={pxPerMeter:null, refW:null}; // pxPerMeter ณ เวลาตั้งสเกล + ความกว้างแปลนตอนตั้ง
+let scale={pxPerMeter:null, refW:null};
 let hasRendered=false;
 
 /* ===== materials ===== */
@@ -461,7 +470,7 @@ function pathObstacleLossAlong(P,Ap,segList){
   let loss=0; for(const s of segList){ if(segIntersect(P,Ap,s.a,s.b)) loss+=(+s.att||0); } return loss;
 }
 
-/* ===== RSSI model (ใช้ normalized + สเกลปัจจุบัน) ===== */
+/* ===== RSSI model ===== */
 function rssiFromAPs(x,y){
   if(!aps.length) return RSSI_MIN;
   const pxPerM = currentPxPerMeter();
@@ -491,8 +500,10 @@ function drawContours(field,w,h,levels,step=2){
   if(!$('#showContours').checked) return;
   ctx.save();
   ctx.strokeStyle='#ffffff';
-  ctx.lineWidth=1.3;
-  ctx.globalAlpha=0.95;
+  ctx.lineWidth=1.4;
+  ctx.lineJoin='round';
+  ctx.lineCap='round';
+  ctx.globalAlpha=0.98;
   const nx=Math.floor((w-1)/step), ny=Math.floor((h-1)/step);
   for(const L of levels){
     for(let gy=0; gy<ny; gy++){
@@ -530,19 +541,6 @@ function drawContours(field,w,h,levels,step=2){
 }
 
 /* ===== render ===== */
-function makeFixedLegend(){ // ทำสเกลสีด้านล่าง
-  const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
-  const c=cvs.getContext('2d');
-  const span1=P_GRAY-RSSI_MIN, span2=P_YELLOW-P_GRAY, span3=P_GREEN-P_YELLOW;
-  const usable=240, s=usable/(span1+span2+span3);
-  const px1=Math.round(span1*s), px2=Math.round(span2*s), px3=Math.round(span3*s), pxG=256-(px1+px2+px3);
-  let x=0;
-  for(let i=0;i<px1;i++,x++){ const t=i/(px1||1), col=mix(GRAY_LIGHT,GRAY_BASE,t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
-  for(let i=0;i<px2;i++,x++){ const t=i/(px2||1), col=mix(GRAY_BASE,[255,255,0],t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
-  for(let i=0;i<px3;i++,x++){ const t=i/(px3||1), col=mix([255,255,0],[0,255,0],t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
-  c.fillStyle='rgb(0,255,0)'; c.fillRect(x,0,pxG,1);
-  g.style.backgroundImage=`url(${cvs.toDataURL()})`;
-}
 function renderHeatmap(){
   if(!floorImg||aps.length===0) return;
   const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
@@ -564,7 +562,7 @@ function renderHeatmap(){
   }
   hctx.putImageData(img,0,0);
 
-  // วาดฮีตแมปก่อน
+  // ฮีตแมปก่อน
   ctx.save();
   ctx.globalAlpha=alpha;
   if(blurPx>0) ctx.filter=`blur(${blurPx}px)`;
@@ -572,10 +570,10 @@ function renderHeatmap(){
   ctx.filter='none';
   ctx.restore();
 
-  // วาดผนัง/วัสดุ/AP
+  // ผนัง/AP
   drawPermanent();
 
-  // *** วาดคอนทัวร์ทีหลังสุด ให้ลอยอยู่เหนือผนัง ***
+  // คอนทัวร์ "ทีหลังสุด" ให้อยู่เหนือผนัง
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
   drawContours(field, heat.width, heat.height, CONTOUR_LEVELS, CONTOUR_STEP);
@@ -645,21 +643,6 @@ function refreshMatList(){
   });
 }
 
-/* ===== toolbar ===== */
-$('#btnScale').onclick=()=> setMode('scale');
-$('#btnIdle').onclick =()=> setMode('idle');
-$('#btnAP').onclick   =()=> setMode('ap');
-$('#btnMat').onclick  =()=> setMode('mat');
-
-$('#btnAPUndo').onclick =()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
-$('#btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
-
-$('#btnMatUndo').onclick =()=>{ segments.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
-$('#btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); } };
-
-$('#btnRender').onclick =()=>{ renderHeatmap(); hideProbe(); };
-$('#btnExport').onclick =()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
-
 /* ===== Save/Load ===== */
 $('#btnSave').onclick=()=>{
   const payload={ aps, segments,
@@ -718,17 +701,84 @@ $('#fileInput').addEventListener('change', e=>{
 });
 $('#btnClear').onclick=()=>{ floorImg=null; drawBase(); drawPermanent(); };
 
+/* ===== snapping helpers (materials endpoints) ===== */
+function getSnapRadius(){
+  const v = parseInt(document.getElementById('snapRadius')?.value ?? '12', 10);
+  return isNaN(v) ? 12 : v;
+}
+function collectMaterialNodesScreen(){
+  const nodes = [];
+  for(const s of segments){
+    const A = worldToScreen(s.aN), B = worldToScreen(s.bN);
+    nodes.push({ x:A.x, y:A.y, n:s.aN });
+    nodes.push({ x:B.x, y:B.y, n:s.bN });
+  }
+  return nodes;
+}
+function findSnapTargetScreen(pt){
+  if(!document.getElementById('snapEnabled')?.checked) return null;
+  const R = getSnapRadius();
+  const nodes = collectMaterialNodesScreen();
+  let best=null, bd=Infinity;
+  for(const nd of nodes){
+    const d = Math.hypot(pt.x-nd.x, pt.y-nd.y);
+    if(d <= R && d < bd){ bd = d; best = nd; }
+  }
+  return best; // {x,y,n:{nx,ny}} หรือ null
+}
+function trySnapNormalized(npt){
+  const p  = worldToScreen(npt);
+  const hit = findSnapTargetScreen(p);
+  return hit ? hit.n : npt;
+}
+function drawSnapHint(pt){
+  const hit = findSnapTargetScreen(pt);
+  if(!hit) return;
+  octx.save();
+  octx.beginPath(); octx.arc(hit.x, hit.y, 6, 0, Math.PI*2);
+  octx.lineWidth = 2; octx.strokeStyle = '#ffffff'; octx.fillStyle = '#00000088';
+  octx.fill(); octx.stroke();
+  octx.restore();
+}
+
 /* ===== drag on canvas ===== */
 function getCanvasPos(e){
   const rect=canvas.getBoundingClientRect();
   const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
   return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY, rect };
 }
-function startDrag(x,y){ dragging=true; dragStart={x,y}; clearOverlay(); }
+function startDrag(x,y){
+  dragging=true;
+  // ถ้าเป็นโหมดวัสดุ: สแน็ปจุดเริ่มทันที (ถ้าอยู่ในรัศมี)
+  if(mode==='mat'){
+    const hit = findSnapTargetScreen({x,y});
+    if(hit){ x = hit.x; y = hit.y; }
+  }
+  dragStart={x,y};
+  clearOverlay();
+}
 function updateDrag(x,y){
-  if(!dragging||!dragStart) return; clearOverlay();
-  const label=(mode==='scale')?`${dist(dragStart,{x,y}).toFixed(1)} px`:`${MATERIALS[$('#matType').value]?.name||'วัสดุ'} · ${($('#matAtt').value||'0')} dB`;
-  drawArrow(dragStart,{x,y},{color:(mode==='scale')?'#6ae3ff':'#ffd36a',label});
+  if(!dragging||!dragStart) return;
+  clearOverlay();
+
+  if(mode==='scale' || mode==='mat'){
+    let A = { x: dragStart.x, y: dragStart.y };
+    let B = { x, y };
+
+    if(mode==='mat'){
+      const startHit = findSnapTargetScreen(A);
+      const endHit   = findSnapTargetScreen(B);
+      if(startHit) A = { x:startHit.x, y:startHit.y };
+      if(endHit)   B = { x:endHit.x,   y:endHit.y   };
+      drawSnapHint(A); drawSnapHint(B);
+    }
+
+    const label=(mode==='scale')
+      ? `${dist(dragStart,{x,y}).toFixed(1)} px`
+      : `${MATERIALS[$('#matType').value]?.name||'วัสดุ'} · ${($('#matAtt').value||'0')} dB`;
+    const color=(mode==='scale')?'#6ae3ff':'#ffd36a';
+    drawArrow(A,B,{color, width:3.5, head:12, dash:[10,6], label});
+  }
 }
 function endDrag(x,y){
   if(!dragging||!dragStart) return; clearOverlay();
@@ -744,8 +794,12 @@ function endDrag(x,y){
     setMode('idle'); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
   }else if(mode==='mat'){
     const type=$('#matType').value, att=parseFloat($('#matAtt').value || (MATERIALS[type]?.att||8));
-    const na=screenToWorld(a), nb=screenToWorld({x,y});
-    segments.push({aN:{nx:clamp01(na.nx),ny:clamp01(na.ny)}, bN:{nx:clamp01(nb.nx),ny:clamp01(nb.ny)}, type, att});
+    const na_raw = screenToWorld(a);
+    const nb_raw = screenToWorld({x,y});
+    const na = trySnapNormalized(na_raw);
+    const nb = trySnapNormalized(nb_raw);
+    segments.push({ aN:{nx:clamp01(na.nx),ny:clamp01(na.ny)},
+                    bN:{nx:clamp01(nb.nx),ny:clamp01(nb.ny)}, type, att });
     setMode('idle'); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
   }
   dragging=false; dragStart=null;
