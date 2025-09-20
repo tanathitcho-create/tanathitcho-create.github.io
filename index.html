@@ -38,7 +38,7 @@
   button.danger{background:#3a1b1b;border-color:#5a2a2a;color:#ffc6c6}
   .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:#9aa4b2;display:inline-flex;gap:6px;align-items:center}
   .legend{display:flex;align-items:center;gap:10px}
-  .grad{width:220px;height:12px;border-radius:999px;border:1px solid #2a3156}
+  .grad{width=220px;height:12px;border-radius:999px;border:1px solid #2a3156}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
   .grid-1{display:grid;grid-template-columns:1fr;gap:8px}
   .kbd{font-family:ui-monospace,Menlo,Consolas,monospace;background:#222846;border:1px solid #2a3156;border-radius:6px;padding:2px 6px;color:#b9c3ff;font-size:12px}
@@ -86,9 +86,10 @@
       <div class="label">2) ตั้งสเกลหน่วยจริง</div>
       <div class="row">
         <button id="btnScale">🧭 ตั้งสเกล (กดค้าง–ลาก–ปล่อย)</button>
+        <button id="btnIdle">🖱️ เม้าส์ปกติ</button>
         <span class="chip">สเกลปัจจุบัน: <span id="scaleLabel">ยังไม่ตั้ง</span></span>
       </div>
-      <div class="small muted">ต้องรู้อัตรา px/เมตร เพื่อคำนวณระยะจาก AP → ทุกพิกัด</div>
+      <div class="small muted">กด Esc เพื่อกลับโหมดเม้าส์ปกติได้เช่นกัน</div>
     </div>
 
     <div class="section">
@@ -188,13 +189,13 @@
     </div>
 
     <div class="section small muted">
-      คีย์ลัด: <span class="kbd">S</span> สเกล • <span class="kbd">A</span> วาง AP • <span class="kbd">W</span> วัสดุ • <span class="kbd">H</span> เรนเดอร์ • คลิกอ่านค่า RSSI
+      คีย์ลัด: <span class="kbd">S</span> สเกล • <span class="kbd">A</span> วาง AP • <span class="kbd">W</span> วัสดุ • <span class="kbd">H</span> เรนเดอร์ • <span class="kbd">Esc</span> เม้าส์ปกติ • คลิกอ่านค่า RSSI
     </div>
   </aside>
 
   <main class="panel">
     <div class="row">
-      <span class="badge" id="modeBadge">โหมด: Idle</span>
+      <span class="badge" id="modeBadge">โหมด: Idle (เม้าส์ปกติ)</span>
       <span class="muted small">สเกล/วัสดุ = กดค้าง–ลาก–ปล่อย | AP = คลิก | Probe = คลิกหลังเรนเดอร์</span>
     </div>
     <div class="stage" id="stage">
@@ -220,11 +221,11 @@
 </div>
 
 <script>
-/* ===== Presets (ตัวอย่าง 2 รุ่นจากที่ให้) ===== */
+/* ===== Presets (2 รุ่นตัวอย่าง) ===== */
 const AP_PRESETS = {
   tplink_ax20: {
     name: "TP-Link Archer AX20 (AX1800 Wi-Fi 6)",
-    defaults: { p0: -40, band: '5' }, // ส่วนใหญ่ใช้งาน 5GHz เป็นหลัก
+    defaults: { p0: -40, band: '5' },
     spec: {
       model:"Archer AX20", buttons:"Reset, WPS/Wi-Fi, Power, LED On/Off",
       power:"12 V ⎓ 1.5 A", antenna:"4× Fixed High-Performance (beamforming)",
@@ -257,7 +258,7 @@ const appPlanning=document.getElementById('appPlanning');
 const appSurvey=document.getElementById('appSurvey');
 const pillPlanning=document.getElementById('pillPlanning');
 const pillSurvey=document.getElementById('pillSurvey');
-function setMode(mode){
+function setApp(mode){
   appMode=mode;
   if(mode==='planning'){
     appPlanning.style.display='grid'; appSurvey.style.display='none';
@@ -267,12 +268,12 @@ function setMode(mode){
     pillPlanning.classList.remove('active'); pillSurvey.classList.add('active');
   }
 }
-pillPlanning.onclick=()=>setMode('planning');
-pillSurvey.onclick=()=>setMode('survey');
+pillPlanning.onclick=()=>setApp('planning');
+pillSurvey.onclick=()=>setApp('survey');
 
 /* ===== constants (คงที่แบบ Ekahau) ===== */
 const RSSI_MIN=-80, P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
-const N_BY_BAND = { '2.4': 2.2, '5': 2.4 }; // ค่าคงที่ (ซ่อน) — ปรับผ่านวัสดุ/EIRP แทน
+const N_BY_BAND = { '2.4': 2.2, '5': 2.4 };
 const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -335,6 +336,23 @@ const UI={
     set('apSpec_cert',s.cert); set('apSpec_sysreq',s.sysreq); set('apSpec_env',s.env); set('apSpec_notes',s.notes);
   });
 })();
+
+/* ===== helpers for UI mode/cursor ===== */
+function setMode(newMode){
+  mode=newMode;
+  UI.modeBadge.textContent =
+    newMode==='ap'   ? 'โหมด: วาง AP (คลิก)'
+  : newMode==='mat'  ? 'โหมด: วัสดุ (ลากเส้น)'
+  : newMode==='scale'? 'โหมด: ตั้งสเกล'
+  : 'โหมด: Idle (เม้าส์ปกติ)';
+  // เปลี่ยนเคอร์เซอร์ตามโหมด
+  if(newMode==='ap' || newMode==='mat' || newMode==='scale'){
+    canvas.style.cursor='crosshair';
+  }else{
+    canvas.style.cursor='default';
+  }
+  hideProbe();
+}
 
 /* ===== size & draw ===== */
 function applyCanvasCSSSize(){
@@ -438,7 +456,7 @@ function rssiFromAPs(x,y){
   for(const a of aps){
     const d_px=Math.hypot(x-a.x,y-a.y), d_m=Math.max(1e-3, d_px/scale.pxPerMeter);
     const loss=pathObstacleLoss(P,a);
-    const nEff = N_BY_BAND[a.band] ?? 2.3; // fallback
+    const nEff = N_BY_BAND[a.band] ?? 2.3;
     const rssi=a.p0 - 10*nEff*Math.log10(d_m) - loss;
     sum_mW += Math.pow(10, rssi/10);
   }
@@ -525,9 +543,10 @@ function refreshMatList(){
 }
 
 /* ===== toolbar ===== */
-$('#btnScale').onclick=()=>{ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); };
-$('#btnAP').onclick   =()=>{ mode='ap';    UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
-$('#btnMat').onclick  =()=>{ mode='mat';   UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
+$('#btnScale').onclick=()=> setMode('scale');
+$('#btnIdle').onclick =()=> setMode('idle');
+$('#btnAP').onclick   =()=> setMode('ap');
+$('#btnMat').onclick  =()=> setMode('mat');
 
 $('#btnAPUndo').onclick =()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
 $('#btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
@@ -589,11 +608,11 @@ function endDrag(x,y){
   if(mode==='scale'){
     const Lpx=dist(a,b), real=prompt(`ความยาวจริง (เมตร) ของไม้บรรทัด ${Lpx.toFixed(1)} px = ?`,'5');
     if(real && +real>0){ scale.pxPerMeter=Lpx/(+real); UI.scaleLabel.textContent=`${scale.pxPerMeter.toFixed(1)} px/เมตร`; }
-    mode='idle'; UI.modeBadge.textContent='โหมด: Idle'; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
+    setMode('idle'); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
   }else if(mode==='mat'){
     const type=$('#matType').value, att=parseFloat($('#matAtt').value || (MATERIALS[type]?.att||8));
-    segments.push({a,b,type,att}); mode='idle'; UI.modeBadge.textContent='โหมด: Idle';
-    drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
+    segments.push({a,b,type,att});
+    setMode('idle'); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
   }
   dragging=false; dragStart=null;
 }
@@ -624,13 +643,14 @@ canvas.addEventListener('click', e=>{
 /* ===== keyboard ===== */
 document.addEventListener('keydown', e=>{
   if(appMode!=='planning') return;
-  if(e.key==='s'||e.key==='S'){ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); }
-  if(e.key==='a'||e.key==='A'){ mode='ap';    UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); }
-  if(e.key==='w'||e.key==='W'){ mode='mat';   UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); }
+  if(e.key==='s'||e.key==='S') setMode('scale');
+  if(e.key==='a'||e.key==='A') setMode('ap');
+  if(e.key==='w'||e.key==='W') setMode('mat');
   if(e.key==='h'||e.key==='H'){ renderHeatmap(); hideProbe(); }
+  if(e.key==='Escape')        setMode('idle'); // เม้าส์ปกติ
 });
 
-/* ===== floor scale controls ===== */
+/* ===== image scale controls ===== */
 function setFloorScaleFromInput(v){
   const pct=clamp(parseInt(v,10)||75,20,150);
   UI.imgScale.value=pct; UI.imgScaleNum.value=pct; floorScale=pct/100;
@@ -642,11 +662,9 @@ UI.imgScaleNum.addEventListener('input', e=> setFloorScaleFromInput(e.target.val
 /* ===== init ===== */
 (function init(){
   applyCanvasCSSSize();
-  setMode('planning'); // เข้า Planning ทันที
+  setApp('planning');           // เข้า Planning
+  setMode('idle');              // เริ่มที่เม้าส์ปกติ
   UI.scaleLabel.textContent='ยังไม่ตั้ง';
-  // materials select พร้อมแล้ว
-  // เติม preset ลง dropdown
-  // ตั้งค่า band เริ่มต้นเป็น 5 GHz
   UI.apBand.value='5';
   drawBase(); drawPermanent();
   UI.apPreset.value='tplink_ax20';
