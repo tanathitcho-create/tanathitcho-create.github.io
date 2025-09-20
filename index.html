@@ -35,7 +35,7 @@
   }
   button:hover{transform:translateY(-1px);box-shadow:0 6px 18px -10px #000,0 0 0 2px var(--ring)}
   button.danger{background:#3a1b1b;border-color:#5a2a2a;color:#ffc6c6}
-  .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+  .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:#muted;display:inline-flex;gap:6px;align-items:center}
   .legend{display:flex;align-items:center;gap:10px}
   .grad{width:220px;height:12px;border-radius:999px;border:1px solid #2a3156}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
@@ -54,22 +54,9 @@
   #overlay{position:absolute; left:0; top:0; pointer-events:none; z-index:3;}
   #probe{position:absolute;display:none;transform:translate(10px,-10px);
          background:#0e1329;border:1px solid #2a3156;border-radius:10px;padding:6px 8px;
-         color:#e8ecf1;font:600 13px ui-monospace,monospace;pointer-events:none;z-index:4;
-         box-shadow:0 6px 20px rgba(0,0,0,.35)}
+         color:#e8ecf1;font:600 13px ui-monospace,monospace;pointer-events:none;z-index:4;box-shadow:0 6px 20px rgba(0,0,0,.35)}
   #probe .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid #0006}
   #probe .sub{font-weight:500;color:#9aa4b2;margin-top:2px}
-
-  #modePicker{position:fixed; inset:0; background:linear-gradient(180deg, rgba(5,8,22,.85), rgba(10,14,34,.85));
-    display:flex; align-items:center; justify-content:center; z-index:80;}
-  .pickerBox{background:#141a2e;border:1px solid #2a3156;border-radius:16px;padding:22px;max-width:520px;width:92%;
-    box-shadow:0 18px 60px rgba(0,0,0,.45)}
-  .pickerTitle{font-size:18px;margin:0 0 12px}
-  .pickerRow{display:flex;gap:12px;flex-wrap:wrap}
-  .pickBtn{flex:1;min-width:180px;padding:16px;border-radius:14px;border:1px solid #2a3156;background:#1b2141;color:#e8ecf1;cursor:pointer}
-  .pickBtn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.35)}
-  .pickHint{font-size:12px;color:#9aa4b2;margin-top:10px}
-  .surveyBlank{background:#ffffff;border-radius:12px;border:1px dashed #cccccc; min-height:300px;
-    display:flex;align-items:center;justify-content:center;color:#333;font:600 18px/1.3 ui-sans-serif,system-ui}
 </style>
 </head>
 <body>
@@ -81,18 +68,7 @@
   </div>
 </header>
 
-<!-- Startup picker -->
-<div id="modePicker">
-  <div class="pickerBox">
-    <h2 class="pickerTitle">เลือกโหมดการทำงาน</h2>
-    <div class="pickerRow">
-      <button class="pickBtn" id="pickPlanning">🛠️ Planning — วาง AP / วัสดุ / สร้าง Heatmap</button>
-      <button class="pickBtn" id="pickSurvey">🧪 Survey — (เริ่มว่างเปล่า) พัฒนาต่อภายหลัง</button>
-    </div>
-    <div class="pickHint">สามารถสลับโหมดได้ที่มุมขวาบนตลอดเวลา</div>
-  </div>
-</div>
-
+<!-- Planning app -->
 <div class="container" id="appPlanning" style="display:grid">
   <aside class="panel">
     <div class="section">
@@ -105,7 +81,7 @@
         <div class="label">ขนาดแปลน (%)</div>
         <input type="range" id="imgScale" min="20" max="150" step="5" value="75"/>
         <input type="number" id="imgScaleNum" min="20" max="150" step="1" value="75" style="width:80px"/>
-        <span class="small muted">ย่อ/ขยายเฉพาะภาพแปลน (ไม่กระทบค่าพิกัด)</span>
+        <span class="small muted">ย่อ/ขยายภาพแปลนเท่านั้น</span>
       </div>
     </div>
 
@@ -115,12 +91,11 @@
         <button id="btnScale">🧭 ตั้งสเกล (กดค้าง–ลาก–ปล่อย)</button>
         <span class="chip">สเกลปัจจุบัน: <span id="scaleLabel">ยังไม่ตั้ง</span></span>
       </div>
-      <div class="small muted">ต้องรู้อัตรา px/เมตร เพื่อคำนวณระยะจาก AP → ทุกพิกัด</div>
+      <div class="small muted">ต้องรู้อัตรา px/เมตร เพื่อคำนวณระยะจาก AP → พิกัด</div>
     </div>
 
     <div class="section">
-      <div class="label">3) วาง Access Point</div>
-
+      <div class="label">3) วาง Access Point (มีพรีเซ็ต)</div>
       <div class="grid" style="align-items:end">
         <div>
           <div class="label">พรีเซ็ต AP</div>
@@ -148,8 +123,7 @@
 
       <div class="row" style="margin-top:6px; gap:10px">
         <label class="chip" style="gap:6px">
-          <input type="checkbox" id="lockN" style="margin-right:6px"/>
-          ล็อก n ทุก AP
+          <input type="checkbox" id="lockN" style="margin-right:6px"/> ล็อก n ทุก AP
         </label>
         <input type="number" id="lockNValue" value="2.2" step="0.1" title="ค่า n ที่ใช้กับทุก AP เมื่อเปิดล็อก"/>
       </div>
@@ -167,9 +141,9 @@
           <div class="label">EIRP / TX / RX Sensitivity</div><textarea id="apSpec_rf"></textarea>
           <div class="label">ฟังก์ชัน/ความปลอดภัยไร้สาย</div><textarea id="apSpec_functions"></textarea>
           <div class="label">ใบรับรอง (Cert.)</div><input type="text" id="apSpec_cert" />
-          <div class="label">ความต้องการระบบ (System Requirements)</div><textarea id="apSpec_sysreq"></textarea>
-          <div class="label">อุณหภูมิ/ความชื้น (Operating/Storage)</div><textarea id="apSpec_env"></textarea>
-          <div class="label">การรับประกัน / Option / หมายเหตุ</div><textarea id="apSpec_notes"></textarea>
+          <div class="label">ความต้องการระบบ</div><textarea id="apSpec_sysreq"></textarea>
+          <div class="label">สภาพแวดล้อมทำงาน/เก็บ</div><textarea id="apSpec_env"></textarea>
+          <div class="label">การรับประกัน/หมายเหตุ</div><textarea id="apSpec_notes"></textarea>
         </div>
       </details>
 
@@ -241,67 +215,64 @@
   </main>
 </div>
 
+<!-- Survey (placeholder) -->
 <div class="container" id="appSurvey" style="display:none;grid-template-columns:1fr">
   <main class="panel" style="display:flex;flex-direction:column;gap:12px">
     <div class="row">
       <span class="badge">โหมด: Survey (Placeholder)</span>
-      <span class="muted small">หน้านี้เว้นว่างไว้ให้คุณพัฒนาต่อ</span>
+      <span class="muted small">หน้านี้เว้นว่างไว้ให้พัฒนาต่อ</span>
     </div>
-    <div class="surveyBlank">Survey Mode — Blank Canvas</div>
+    <div class="surveyBlank" style="background:#fff;border-radius:12px;border:1px dashed #ccc;min-height:300px;display:flex;align-items:center;justify-content:center;color:#333;font:600 18px/1.3 ui-sans-serif">Survey Mode — Blank Canvas</div>
   </main>
 </div>
 
 <script>
-/* ===== AP presets (2 รุ่นตามที่ให้) ===== */
+/* ===== AP PRESETS ===== */
 const AP_PRESETS = {
-  "tplink_ax20": {
+  tplink_ax20: {
     name: "TP-Link Archer AX20 (AX1800 Wi-Fi 6)",
     defaults: { p0: -40, n: 2.2 },
     spec: {
       model:"Archer AX20 AX1800 Wi-Fi 6 Router",
-      buttons:"Reset, WPS/Wi-Fi, Power On/Off, LED On/Off",
+      buttons:"Reset, WPS/Wi-Fi, Power, LED On/Off",
       power:"12 V ⎓ 1.5 A",
       antenna:"4× Fixed High-Performance Antennas (beamforming)",
-      iface:"1× Gigabit WAN, 4× Gigabit LAN",
-      standards:"Wi-Fi 6; IEEE 802.11ax/ac/n/a (5 GHz); IEEE 802.11ax/n/b/g (2.4 GHz); Bands: 2.4 & 5 GHz",
-      rate:"AX1800 — 5 GHz: 1201 Mbps; 2.4 GHz: 574 Mbps",
-      rf:"Reception Sensitivity: N/A",
-      functions:"SPI Firewall, Access Control, IP & MAC Binding, Application Layer features",
+      iface:"1× Gbps WAN, 4× Gbps LAN",
+      standards:"802.11ax/ac/n/a (5 GHz), 802.11ax/n/b/g (2.4 GHz); Dual-band",
+      rate:"AX1800 — 5G: 1201 Mbps; 2.4G: 574 Mbps",
+      rf:"—",
+      functions:"SPI FW, Access Control, IP/MAC Binding",
       cert:"FCC, CE, RoHS",
-      sysreq:"IE 11+, Firefox 12+, Chrome 20+, Safari 4+",
-      env:"Operating 0–40°C; Storage −40–70°C; RH 10–90% / 5–90% (non-cond.)",
-      notes:"Warranty: Lifetime; Dimensions: 260.2×135×38.6 mm"
+      sysreq:"IE11+, Firefox 12+, Chrome 20+, Safari 4+",
+      env:"Op 0–40°C; St −40–70°C; RH 10–90/5–90%",
+      notes:"260.2×135×38.6 mm; Warranty: Lifetime"
     }
   },
-  "totolink_a3002ru": {
+  totolink_a3002ru: {
     name: "TOTOLINK A3002RU (AC1200)",
     defaults: { p0: -42, n: 2.4 },
     spec: {
-      model:"TOTOLINK A3002RU",
-      buttons:"RST, WPS, Power On/Off",
-      power:"12 V DC ⎓ 2 A",
-      antenna:"2×5 dBi (2.4G) + 2×5 dBi (5G) Fixed",
-      iface:"4× 1000M LAN, 1× 1000M WAN, 1× USB 2.0",
-      standards:"IEEE 802.11ac/n/g/b/a; Dual-Band 2.4/5 GHz",
-      rate:"2.4G: up to 300 Mbps; 5G: up to 867 Mbps (AC1200)",
-      rf:"EIRP 2.4G <20 dBm; 5G <23 dBm\nRX sens. 2.4G: 11b≤−79, 11g≤−68, 11n HT20≤−65 / HT40≤−61 dBm\n5G: 11a≤−68, 11ac HT20≤−65 / HT40≤−61 / HT80≤−51 dBm",
-      functions:"WISP/Client, Repeater, Router, Bridge w/ AP, Client; WEP/WPA/WPA2; Multiple APs, WDS, WPS; ACL; SPI FW; QoS; TR-069; DDNS; DoS; SNMP",
+      model:"A3002RU",
+      buttons:"RST, WPS, Power",
+      power:"12 V ⎓ 2 A",
+      antenna:"2×5 dBi (2.4G) + 2×5 dBi (5G)",
+      iface:"4× Gbps LAN, 1× Gbps WAN, 1× USB 2.0",
+      standards:"802.11ac/n/g/b/a; Dual-band",
+      rate:"2.4G up to 300 Mbps; 5G up to 867 Mbps",
+      rf:"EIRP 2.4G <20 dBm; 5G <23 dBm; RX sens. refs provided",
+      functions:"WISP/Client, Repeater, Router, Bridge w/ AP; WEP/WPA/WPA2; ACL; SPI FW; QoS; TR-069; DDNS; DoS; SNMP",
       cert:"—", sysreq:"—", env:"—",
       notes:"LEDs: Power, CPU, 2.4G, 5G, WAN, 4×LAN, USB"
     }
   }
 };
 
-/* ===== Mode switch ===== */
-let appMode='planning';
-const modePicker=document.getElementById('modePicker');
+/* ===== Mode switch (header pills) ===== */
+let appMode='planning'; // default
 const appPlanning=document.getElementById('appPlanning');
 const appSurvey=document.getElementById('appSurvey');
 const pillPlanning=document.getElementById('pillPlanning');
 const pillSurvey=document.getElementById('pillSurvey');
-const pickPlanning=document.getElementById('pickPlanning');
-const pickSurvey=document.getElementById('pickSurvey');
-
 function setMode(mode){
   appMode=mode;
   if(mode==='planning'){
@@ -311,25 +282,23 @@ function setMode(mode){
     appPlanning.style.display='none'; appSurvey.style.display='grid';
     pillPlanning.classList.remove('active'); pillSurvey.classList.add('active');
   }
-  modePicker.style.display='none';
 }
 pillPlanning.onclick=()=>setMode('planning');
 pillSurvey.onclick=()=>setMode('survey');
-pickPlanning.onclick=()=>setMode('planning');
-pickSurvey.onclick=()=>setMode('survey');
 
-/* ===== thresholds & utils ===== */
+/* ===== constants & helpers ===== */
 const RSSI_MIN=-80, P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
 const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const lerp=(a,b,t)=>a+(b-a)*t;
-const mixColor=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
+const mix=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
+const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
 /* ===== canvas & state ===== */
-const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
-const overlay=document.getElementById('overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
+const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
+const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
 let floorImg=null, floorScale=0.75;
 let aps=[], segments=[];
 let mode='idle', dragging=false, dragStart=null;
@@ -338,86 +307,66 @@ let scale={pxPerMeter:null}, hasRendered=false;
 /* lock-n */
 let lockN=false, lockNValue=2.2;
 
+/* materials */
+const MATERIALS={
+  drywall:{name:'ผนังยิปซัม (Drywall)',color:'#98c1ff',att:3},
+  glass:{name:'กระจก',color:'#7de1ff',att:4},
+  wood:{name:'ไม้',color:'#9ae27b',att:5},
+  brick:{name:'อิฐ/คอนกรีตมวลเบา',color:'#ffb673',att:8},
+  concrete:{name:'คอนกรีตเสริมเหล็ก',color:'#ff8f8f',att:12},
+  metal:{name:'โลหะแผ่น/ประตูเหล็ก',color:'#ffd36a',att:20},
+  human:{name:'ร่างกายคน (เฉลี่ย)',color:'#d6b3ff',att:3}
+};
+const matTypeSel=$('#matType');
+Object.keys(MATERIALS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=MATERIALS[k].name; matTypeSel.appendChild(o); });
+matTypeSel.value='brick'; $('#matAtt').value=MATERIALS['brick'].att;
+matTypeSel.addEventListener('change',()=>$('#matAtt').value=MATERIALS[matTypeSel.value].att);
+
 /* UI refs */
 const UI={
-  modeBadge:document.getElementById('modeBadge'),
-  scaleLabel:document.getElementById('scaleLabel'),
-  apList:document.getElementById('apList'),
-  matList:document.getElementById('matList'),
-  probe:document.getElementById('probe'),
-  probeVal:document.getElementById('probeVal'),
-  probeMeta:document.getElementById('probeMeta'),
-  probeSw:document.getElementById('sw'),
-  stage:document.getElementById('stage'),
-  imgScale:document.getElementById('imgScale'),
-  imgScaleNum:document.getElementById('imgScaleNum'),
-  apPreset:document.getElementById('apPreset')
+  modeBadge:$('#modeBadge'), scaleLabel:$('#scaleLabel'),
+  apList:$('#apList'), matList:$('#matList'),
+  probe:$('#probe'), probeVal:$('#probeVal'), probeMeta:$('#probeMeta'), probeSw:$('#sw'),
+  stage:$('#stage'),
+  imgScale:$('#imgScale'), imgScaleNum:$('#imgScaleNum'),
+  apPreset:$('#apPreset')
 };
 
-/* ===== Preset selector ===== */
+/* ===== preset dropdown ===== */
 (function initApPreset(){
   Object.keys(AP_PRESETS).forEach(key=>{
     const o=document.createElement('option'); o.value=key; o.textContent=AP_PRESETS[key].name;
     UI.apPreset.appendChild(o);
   });
-  document.getElementById('btnApplyPreset').addEventListener('click', ()=>{
-    const key=UI.apPreset.value, p=AP_PRESETS[key]; if(!p) return;
+  $('#btnApplyPreset').addEventListener('click', ()=>{
+    const p=AP_PRESETS[UI.apPreset.value]; if(!p) return;
     const num=aps.length+1;
-    document.getElementById('apLabel').value = `${p.name.split('(')[0].trim()}-${num}`;
-    document.getElementById('apP0').value = p.defaults?.p0 ?? -40;
-    document.getElementById('apN').value  = p.defaults?.n  ?? 2.2;
+    $('#apLabel').value = `${p.name.split('(')[0].trim()}-${num}`;
+    $('#apP0').value = p.defaults?.p0 ?? -40;
+    $('#apN').value  = p.defaults?.n  ?? 2.2;
     const s=p.spec||{};
-    document.getElementById('apSpec_model').value=s.model||'';
-    document.getElementById('apSpec_buttons').value=s.buttons||'';
-    document.getElementById('apSpec_power').value=s.power||'';
-    document.getElementById('apSpec_ant').value=s.antenna||'';
-    document.getElementById('apSpec_iface').value=s.iface||'';
-    document.getElementById('apSpec_standards').value=s.standards||'';
-    document.getElementById('apSpec_rate').value=s.rate||'';
-    document.getElementById('apSpec_rf').value=s.rf||'';
-    document.getElementById('apSpec_functions').value=s.functions||'';
-    document.getElementById('apSpec_cert').value=s.cert||'';
-    document.getElementById('apSpec_sysreq').value=s.sysreq||'';
-    document.getElementById('apSpec_env').value=s.env||'';
-    document.getElementById('apSpec_notes').value=s.notes||'';
+    const set=(id,v)=>document.getElementById(id).value=v||'';
+    set('apSpec_model',s.model); set('apSpec_buttons',s.buttons); set('apSpec_power',s.power);
+    set('apSpec_ant',s.antenna); set('apSpec_iface',s.iface); set('apSpec_standards',s.standards);
+    set('apSpec_rate',s.rate); set('apSpec_rf',s.rf); set('apSpec_functions',s.functions);
+    set('apSpec_cert',s.cert); set('apSpec_sysreq',s.sysreq); set('apSpec_env',s.env); set('apSpec_notes',s.notes);
   });
 })();
 
-/* ===== spec helpers ===== */
-function getAPSpecFromForm(){
-  const g=id=>document.getElementById(id).value.trim();
-  return {
-    model:g('apSpec_model'), buttons:g('apSpec_buttons'), power:g('apSpec_power'),
-    antenna:g('apSpec_ant'), iface:g('apSpec_iface'), standards:g('apSpec_standards'),
-    rate:g('apSpec_rate'), rf:g('apSpec_rf'), functions:g('apSpec_functions'),
-    cert:g('apSpec_cert'), sysreq:g('apSpec_sysreq'), env:g('apSpec_env'), notes:g('apSpec_notes')
-  };
-}
-function specToPrettyText(spec){
-  const lines=[], add=(k,v)=>{ if(v) lines.push(`${k}: ${v}`); };
-  add('รุ่น/ชื่อ',spec.model); add('ปุ่ม',spec.buttons); add('แหล่งจ่ายไฟ',spec.power);
-  add('เสาอากาศ',spec.antenna); add('พอร์ต/อินเทอร์เฟซ',spec.iface);
-  add('มาตรฐาน/ย่านความถี่',spec.standards); add('อัตราส่งข้อมูล',spec.rate);
-  add('EIRP/TX/RX',spec.rf); add('ฟังก์ชัน',spec.functions);
-  add('ใบรับรอง',spec.cert); add('ระบบที่ต้องการ',spec.sysreq);
-  add('สิ่งแวดล้อม',spec.env); add('อื่นๆ',spec.notes);
-  return lines.join('\n');
-}
-
-/* ===== size & draw ===== */
+/* ===== layout helpers ===== */
 function applyCanvasCSSSize(){
   canvas.style.width=canvas.width+'px'; canvas.style.height=canvas.height+'px';
   overlay.style.width=canvas.width+'px'; overlay.style.height=canvas.height+'px';
   overlay.style.left='0px'; overlay.style.top='0px';
 }
 function fitCanvasToImage(img){
-  const maxW=1920,maxH=1080;
-  const k=Math.min(maxW/img.width, maxH/img.height, 1);
+  const maxW=1920,maxH=1080, k=Math.min(maxW/img.width, maxH/img.height, 1);
   canvas.width=Math.round(img.width*k); canvas.height=Math.round(img.height*k);
   overlay.width=canvas.width; overlay.height=canvas.height; applyCanvasCSSSize();
 }
 window.addEventListener('resize', applyCanvasCSSSize);
 
+/* ===== base/permanent draw ===== */
 function drawBase(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(floorImg){
@@ -435,27 +384,26 @@ function drawBase(){
 function drawPermanent(){
   ctx.lineWidth=3;
   segments.forEach(s=>{
-    const color=(MATERIALS[s.type]||{color:'#fff'}).color;
-    ctx.strokeStyle=color; ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
+    const m=MATERIALS[s.type]||{color:'#fff'}; ctx.strokeStyle=m.color;
+    ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
   });
   aps.forEach(a=>{
     ctx.fillStyle='#8fd3ff'; ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#2a7fff'; ctx.lineWidth=2; ctx.stroke();
     ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
-    const nShow=lockN?lockNValue:a.n;
-    const model=a.spec?.model?` (${a.spec.model})`:'';
+    const nShow=lockN?lockNValue:a.n; const model=a.spec?.model?` (${a.spec.model})`:'';
     ctx.fillText(`${a.label||'AP'}${model} · P0:${a.p0} n:${nShow}`, a.x+10, a.y-8);
   });
 }
 
-/* overlay */
+/* ===== overlay arrows ===== */
 function clearOverlay(){ octx.clearRect(0,0,overlay.width,overlay.height); }
-function drawArrow(a,b,opts={}){
-  const {color='#6ae3ff',width=3.5,head=12,dash=[10,6],label=''}=opts;
+function drawArrow(a,b,{color='#6ae3ff',width=3.5,head=12,dash=[10,6],label=''}={}){
   octx.save(); octx.lineWidth=width; octx.setLineDash(dash); octx.strokeStyle=color;
   octx.beginPath(); octx.moveTo(a.x,a.y); octx.lineTo(b.x,b.y); octx.stroke(); octx.setLineDash([]);
   const ang=Math.atan2(b.y-a.y,b.x-a.x);
-  octx.beginPath(); octx.moveTo(b.x,b.y);
+  octx.beginPath();
+  octx.moveTo(b.x,b.y);
   octx.lineTo(b.x-head*Math.cos(ang-Math.PI/7), b.y-head*Math.sin(ang-Math.PI/7));
   octx.lineTo(b.x-head*Math.cos(ang+Math.PI/7), b.y-head*Math.sin(ang+Math.PI/7));
   octx.closePath(); octx.fillStyle=color; octx.fill();
@@ -465,29 +413,28 @@ function drawArrow(a,b,opts={}){
   octx.restore();
 }
 
-/* legend & color */
+/* ===== legend & color map (−67 เทา, −60 เหลือง, −30 เขียว) ===== */
 function makeFixedLegend(){
-  const g=document.getElementById('grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
+  const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
   const c=cvs.getContext('2d');
   const span1=P_GRAY-RSSI_MIN, span2=P_YELLOW-P_GRAY, span3=P_GREEN-P_YELLOW;
   const usable=240, s=usable/(span1+span2+span3);
   const px1=Math.round(span1*s), px2=Math.round(span2*s), px3=Math.round(span3*s), pxG=256-(px1+px2+px3);
   let x=0;
-  for(let i=0;i<px1;i++,x++){ const t=i/(px1||1), col=mixColor(GRAY_LIGHT,GRAY_BASE,t); c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
-  for(let i=0;i<px2;i++,x++){ const t=i/(px2||1), col=mixColor(GRAY_BASE,[255,255,0],t); c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
-  for(let i=0;i<px3;i++,x++){ const t=i/(px3||1), col=mixColor([255,255,0],[0,255,0],t); c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
-  c.fillStyle=`rgb(0,255,0)`; c.fillRect(x,0,pxG,1);
+  for(let i=0;i<px1;i++,x++){ const t=i/(px1||1), col=mix(GRAY_LIGHT,GRAY_BASE,t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
+  for(let i=0;i<px2;i++,x++){ const t=i/(px2||1), col=mix(GRAY_BASE,[255,255,0],t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
+  for(let i=0;i<px3;i++,x++){ const t=i/(px3||1), col=mix([255,255,0],[0,255,0],t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
+  c.fillStyle='rgb(0,255,0)'; c.fillRect(x,0,pxG,1);
   g.style.backgroundImage=`url(${cvs.toDataURL()})`;
 }
 function colorFromRSSI(v){
-  if (v<=P_GRAY){ const t=clamp((P_GRAY-v)/(P_GRAY-RSSI_MIN),0,1); return mixColor(GRAY_BASE,GRAY_LIGHT,t); }
-  if (v<=P_YELLOW){ const t=(v-P_GRAY)/(P_YELLOW-P_GRAY); return mixColor(GRAY_BASE,[255,255,0],t); }
-  if (v<=P_GREEN){ const t=(v-P_YELLOW)/(P_GREEN-P_YELLOW); return mixColor([255,255,0],[0,255,0],t); }
+  if (v<=P_GRAY){ const t=clamp((P_GRAY-v)/(P_GRAY-RSSI_MIN),0,1); return mix(GRAY_BASE,GRAY_LIGHT,t); }
+  if (v<=P_YELLOW){ const t=(v-P_GRAY)/(P_YELLOW-P_GRAY); return mix(GRAY_BASE,[255,255,0],t); }
+  if (v<=P_GREEN){ const t=(v-P_YELLOW)/(P_GREEN-P_YELLOW); return mix([255,255,0],[0,255,0],t); }
   return [0,255,0];
 }
-const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
-/* geometry & obstacles */
+/* ===== geometry & loss ===== */
 function orient(a,b,c){ return (b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x); }
 function onSeg(a,b,c){ return Math.min(a.x,b.x)-1e-6<=c.x&&c.x<=Math.max(a.x,b.x)+1e-6 &&
                              Math.min(a.y,b.y)-1e-6<=c.y&&c.y<=Math.max(a.y,b.y)+1e-6; }
@@ -502,22 +449,7 @@ function segIntersect(p1,p2,q1,q2){
 }
 function pathObstacleLoss(pFrom,pTo){ let loss=0; for(const s of segments){ if(segIntersect(pFrom,pTo,s.a,s.b)) loss+=(+s.att||0); } return loss; }
 
-/* materials */
-const MATERIALS={
-  drywall:{name:'ผนังยิปซัม (Drywall)',color:'#98c1ff',att:3},
-  glass:{name:'กระจก',color:'#7de1ff',att:4},
-  wood:{name:'ไม้',color:'#9ae27b',att:5},
-  brick:{name:'อิฐ/คอนกรีตมวลเบา',color:'#ffb673',att:8},
-  concrete:{name:'คอนกรีตเสริมเหล็ก',color:'#ff8f8f',att:12},
-  metal:{name:'โลหะแผ่น/ประตูเหล็ก',color:'#ffd36a',att:20},
-  human:{name:'ร่างกายคน (เฉลี่ย)',color:'#d6b3ff',att:3}
-};
-const matTypeSel=document.getElementById('matType');
-Object.keys(MATERIALS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=MATERIALS[k].name; matTypeSel.appendChild(o); });
-matTypeSel.value='brick'; document.getElementById('matAtt').value=MATERIALS['brick'].att;
-matTypeSel.addEventListener('change',()=>document.getElementById('matAtt').value=MATERIALS[matTypeSel.value].att);
-
-/* RSSI model */
+/* ===== RSSI model ===== */
 function rssiFromAPs(x,y){
   if(!aps.length||!scale.pxPerMeter) return RSSI_MIN;
   const P={x,y}; let sum_mW=0;
@@ -531,11 +463,11 @@ function rssiFromAPs(x,y){
   return 10*Math.log10(Math.max(1e-15,sum_mW));
 }
 
-/* render */
+/* ===== render heatmap ===== */
 function renderHeatmap(){
   if(!floorImg||aps.length===0) return;
-  const alpha=clamp(parseFloat(document.getElementById('alpha').value||'0.6'),0,1);
-  const blurPx=Math.max(0,parseInt(document.getElementById('blurPx').value||'16',10));
+  const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
+  const blurPx=Math.max(0,parseInt($('#blurPx').value||'16',10));
   makeFixedLegend(); drawBase();
   const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
   const hctx=heat.getContext('2d',{willReadFrequently:true});
@@ -551,7 +483,7 @@ function renderHeatmap(){
   drawPermanent(); hasRendered=true;
 }
 
-/* probe */
+/* ===== probe ===== */
 function showProbeAt(x,y){
   ctx.save(); ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.globalAlpha=.9; ctx.fill();
   ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke(); ctx.restore();
@@ -564,7 +496,7 @@ function showProbeAt(x,y){
 }
 function hideProbe(){ UI.probe.style.display='none'; }
 
-/* lists */
+/* ===== lists ===== */
 function escapeHtml(s){ return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function refreshAPList(){
   UI.apList.innerHTML='';
@@ -581,7 +513,8 @@ function refreshAPList(){
       </div>`;
     row.querySelector('button.ghost').onclick=e=>{
       const spec=aps[+e.target.getAttribute('data-i')]?.spec||{};
-      alert(specToPrettyText(spec)||'(ไม่มีสเปกที่บันทึก)');
+      const lines=[]; for(const [k,v] of Object.entries(spec)){ if(v) lines.push(`${k}: ${v}`); }
+      alert(lines.join('\n')||'(ไม่มีสเปกที่บันทึก)');
     };
     row.querySelector('button[data-del]').onclick=e=>{
       aps.splice(+e.target.getAttribute('data-del'),1);
@@ -609,39 +542,36 @@ function refreshMatList(){
   });
 }
 
-/* toolbar */
-document.getElementById('btnScale').onclick=()=>{ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); };
-document.getElementById('btnAP').onclick=()=>{ mode='ap'; UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
-document.getElementById('btnMat').onclick=()=>{ mode='mat'; UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
+/* ===== toolbar ===== */
+$('#btnScale').onclick=()=>{ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); };
+$('#btnAP').onclick   =()=>{ mode='ap';    UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
+$('#btnMat').onclick  =()=>{ mode='mat';   UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
 
-document.getElementById('btnAPUndo').onclick=()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
-document.getElementById('btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
+$('#btnAPUndo').onclick =()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
+$('#btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
 
-document.getElementById('btnMatUndo').onclick=()=>{ segments.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
-document.getElementById('btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); } };
+$('#btnMatUndo').onclick =()=>{ segments.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
+$('#btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); } };
 
-document.getElementById('btnRender').onclick=()=>{ renderHeatmap(); hideProbe(); };
-document.getElementById('btnExport').onclick=()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
+$('#btnRender').onclick =()=>{ renderHeatmap(); hideProbe(); };
+$('#btnExport').onclick =()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
 
-/* Save/Load */
-document.getElementById('btnSave').onclick=()=>{
+/* ===== save/load ===== */
+$('#btnSave').onclick=()=>{
   const payload={ aps, segments,
-    alpha:+(document.getElementById('alpha').value||0.6),
-    blurPx:+(document.getElementById('blurPx').value||16),
+    alpha:+($('#alpha').value||0.6), blurPx:+($('#blurPx').value||16),
     scale:scale.pxPerMeter, floorScale, lockN, lockNValue };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
   a.href=url; a.download='heatmap_project_planning.json'; a.click(); URL.revokeObjectURL(url);
 };
-document.getElementById('loadJson').addEventListener('change', e=>{
+$('#loadJson').addEventListener('change', e=>{
   const f=e.target.files[0]; if(!f) return;
   const reader=new FileReader();
   reader.onload=()=>{ try{
       const obj=JSON.parse(reader.result);
-      aps=(obj.aps||[]).map(a=>({ ...a, spec:a.spec||{} }));
-      segments=obj.segments||[];
-      document.getElementById('alpha').value=obj.alpha??0.6;
-      document.getElementById('blurPx').value=obj.blurPx??16;
+      aps=(obj.aps||[]).map(a=>({ ...a, spec:a.spec||{} })); segments=obj.segments||[];
+      $('#alpha').value=obj.alpha??0.6; $('#blurPx').value=obj.blurPx??16;
       scale.pxPerMeter=obj.scale||null; floorScale=clamp(obj.floorScale ?? floorScale,0.2,1.5);
       lockN=!!obj.lockN; lockNValue=parseFloat(obj.lockNValue ?? 2.2); syncLockNUI();
       UI.imgScale.value=Math.round(floorScale*100); UI.imgScaleNum.value=Math.round(floorScale*100);
@@ -651,15 +581,15 @@ document.getElementById('loadJson').addEventListener('change', e=>{
   reader.readAsText(f);
 });
 
-/* image I/O */
-document.getElementById('fileInput').addEventListener('change', e=>{
+/* ===== image io ===== */
+$('#fileInput').addEventListener('change', e=>{
   const f=e.target.files[0]; if(!f) return;
   const img=new Image(); img.onload=()=>{ floorImg=img; fitCanvasToImage(img); drawBase(); drawPermanent(); };
   img.src=URL.createObjectURL(f);
 });
-document.getElementById('btnClear').onclick=()=>{ floorImg=null; drawBase(); drawPermanent(); };
+$('#btnClear').onclick=()=>{ floorImg=null; drawBase(); drawPermanent(); };
 
-/* drag on canvas */
+/* ===== drag on canvas ===== */
 function getCanvasPos(e){
   const rect=canvas.getBoundingClientRect();
   const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
@@ -668,7 +598,7 @@ function getCanvasPos(e){
 function startDrag(x,y){ dragging=true; dragStart={x,y}; clearOverlay(); }
 function updateDrag(x,y){
   if(!dragging||!dragStart) return; clearOverlay();
-  const label=(mode==='scale')?`${dist(dragStart,{x,y}).toFixed(1)} px`:`${MATERIALS[document.getElementById('matType').value]?.name||'วัสดุ'} · ${(document.getElementById('matAtt').value||'0')} dB`;
+  const label=(mode==='scale')?`${dist(dragStart,{x,y}).toFixed(1)} px`:`${MATERIALS[$('#matType').value]?.name||'วัสดุ'} · ${($('#matAtt').value||'0')} dB`;
   drawArrow(dragStart,{x,y},{color:(mode==='scale')?'#6ae3ff':'#ffd36a',label});
 }
 function endDrag(x,y){
@@ -679,7 +609,7 @@ function endDrag(x,y){
     if(real && +real>0){ scale.pxPerMeter=Lpx/(+real); UI.scaleLabel.textContent=`${scale.pxPerMeter.toFixed(1)} px/เมตร`; }
     mode='idle'; UI.modeBadge.textContent='โหมด: Idle'; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
   }else if(mode==='mat'){
-    const type=document.getElementById('matType').value, att=parseFloat(document.getElementById('matAtt').value || (MATERIALS[type]?.att||8));
+    const type=$('#matType').value, att=parseFloat($('#matAtt').value || (MATERIALS[type]?.att||8));
     segments.push({a,b,type,att}); mode='idle'; UI.modeBadge.textContent='โหมด: Idle';
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
   }
@@ -690,23 +620,27 @@ canvas.addEventListener('mousemove', e=>{ if(appMode!=='planning') return; const
 canvas.addEventListener('mouseup', e=>{ if(appMode!=='planning') return; const {x,y}=getCanvasPos(e); if(mode==='scale'||mode==='mat') endDrag(x,y); });
 canvas.addEventListener('mouseleave', ()=>{ if(appMode!=='planning') return; dragging=false; dragStart=null; clearOverlay(); });
 
-/* click for AP / probe */
+/* ===== clicks: AP/probe ===== */
 canvas.addEventListener('click', e=>{
   if(appMode!=='planning') return;
   const {x,y}=getCanvasPos(e);
   if(mode==='ap'){
     if(!scale.pxPerMeter) return;
-    const label=(document.getElementById('apLabel').value.trim()||`AP-${aps.length+1}`);
-    const p0=parseFloat(document.getElementById('apP0').value||'-40');
-    const n =(document.getElementById('lockN').checked? parseFloat(document.getElementById('lockNValue').value||'2.2')
-                                                    : parseFloat(document.getElementById('apN').value||'2.2'));
-    const spec=getAPSpecFromForm();
+    const label=$('#apLabel').value.trim()||`AP-${aps.length+1}`;
+    const p0=parseFloat($('#apP0').value||'-40');
+    const n =($('#lockN').checked? parseFloat($('#lockNValue').value||'2.2')
+                                 : parseFloat($('#apN').value||'2.2'));
+    const g=id=>document.getElementById(id).value.trim();
+    const spec={ model:g('apSpec_model'), buttons:g('apSpec_buttons'), power:g('apSpec_power'),
+      antenna:g('apSpec_ant'), iface:g('apSpec_iface'), standards:g('apSpec_standards'),
+      rate:g('apSpec_rate'), rf:g('apSpec_rf'), functions:g('apSpec_functions'),
+      cert:g('apSpec_cert'), sysreq:g('apSpec_sysreq'), env:g('apSpec_env'), notes:g('apSpec_notes') };
     aps.push({x,y,label,p0,n,spec});
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList();
   }else if(mode==='idle'){ if(!hasRendered) return; renderHeatmap(); showProbeAt(x,y); }
 });
 
-/* keyboard (ครบวงเล็บ/กาปิดแน่นอน) */
+/* ===== keyboard ===== */
 document.addEventListener('keydown', e=>{
   if(appMode!=='planning') return;
   if(e.key==='s'||e.key==='S'){ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); }
@@ -715,16 +649,15 @@ document.addEventListener('keydown', e=>{
   if(e.key==='h'||e.key==='H'){ renderHeatmap(); hideProbe(); }
 });
 
-/* lock-n sync */
+/* ===== lock-n ===== */
 function syncLockNUI(){
-  const apNInput=document.getElementById('apN');
-  const lockEl=document.getElementById('lockN'), valEl=document.getElementById('lockNValue');
-  lockN=lockEl.checked; lockNValue=parseFloat(valEl.value||'2.2'); if(apNInput) apNInput.disabled=lockN;
+  const apNInput=$('#apN'); lockN=$('#lockN').checked; lockNValue=parseFloat($('#lockNValue').value||'2.2');
+  apNInput.disabled=lockN;
 }
-document.getElementById('lockN')?.addEventListener('change', ()=>{ syncLockNUI(); if(hasRendered) renderHeatmap(); });
-document.getElementById('lockNValue')?.addEventListener('input', ()=>{ syncLockNUI(); if(document.getElementById('lockN').checked && hasRendered) renderHeatmap(); });
+$('#lockN').addEventListener('change', ()=>{ syncLockNUI(); if(hasRendered) renderHeatmap(); });
+$('#lockNValue').addEventListener('input', ()=>{ syncLockNUI(); if($('#lockN').checked && hasRendered) renderHeatmap(); });
 
-/* floor scale controls */
+/* ===== floor scale controls ===== */
 function setFloorScaleFromInput(v){
   const pct=clamp(parseInt(v,10)||75,20,150);
   UI.imgScale.value=pct; UI.imgScaleNum.value=pct; floorScale=pct/100;
@@ -733,15 +666,12 @@ function setFloorScaleFromInput(v){
 UI.imgScale.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 UI.imgScaleNum.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 
-/* init */
+/* ===== init (ไม่มีหน้าจอเลือกตอนเริ่มแล้ว) ===== */
 (function init(){
   applyCanvasCSSSize();
-  // เติม materials ลง select แล้วอัปเดตป้าย
+  setMode('planning'); // เริ่มใน Planning ทันที
   UI.scaleLabel.textContent='ยังไม่ตั้ง';
-  // เข้าโหมด Planning อัตโนมัติ (แก้เคสคลิกไม่ได้)
-  setMode('planning');
   drawBase(); drawPermanent();
-  // เติมพรีเซ็ตครั้งแรกเพื่อดูตัวอย่าง
   UI.apPreset.value='tplink_ax20';
 })();
 </script>
