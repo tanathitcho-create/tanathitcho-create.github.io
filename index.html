@@ -154,7 +154,7 @@
       <div class="label">4) วัสดุ/สิ่งกีดขวาง</div>
       <div class="grid">
         <div><div class="label">ชนิดวัสดุ</div><select id="matType"></select></div>
-        <div><div class="label">การดูดกลืน (dB/ครั้ง)</div><input type="number" id="matAtt" value="8" step="0.5"/></div>
+        <div><div class="label">การดูดกลืน (ดB/ครั้ง)</div><input type="number" id="matAtt" value="8" step="0.5"/></div>
       </div>
       <div class="row" style="margin-top:8px)">
         <button id="btnMat">🧱 โหมดวัสดุ (กดค้าง–ลาก–ปล่อย)</button>
@@ -171,7 +171,7 @@
         <div><div class="label">โปร่งใสฮีตแมป</div><input type="number" id="alpha" value="0.6" min="0" max="1" step="0.05"/></div>
         <div style="grid-column:1/-1">
           <label><input type="checkbox" id="showContours" checked/> แสดงเส้นขอบเขต (คอนทัวร์) ทีละ −5 dBm</label>
-          <span class="small muted">ระดับ: −30, −35, −40, −55, −60, −65, −70 dBm</span>
+          <span class="small muted">ระดับ: −20 ถึง −80 ทุก 5 dBm</span>
         </div>
       </div>
       <div class="row" style="margin-top:10px">
@@ -225,7 +225,7 @@
 </div>
 
 <script>
-/* ===== Presets (2 รุ่นตัวอย่าง) ===== */
+/* ===== Presets (ตัวอย่าง 2 รุ่น) ===== */
 const AP_PRESETS = {
   tplink_ax20: {
     name: "TP-Link Archer AX20 (AX1800 Wi-Fi 6)",
@@ -275,12 +275,12 @@ function setApp(mode){
 pillPlanning.onclick=()=>setApp('planning');
 pillSurvey.onclick=()=>setApp('survey');
 
-/* ===== constants (คงที่แบบ Ekahau) ===== */
+/* ===== constants (Ekahau-like) ===== */
 const RSSI_MIN=-80, P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
 const N_BY_BAND = { '2.4': 2.2, '5': 2.4 };
 const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
-const CONTOUR_LEVELS=[-30,-35,-40,-55,-60,-65,-70]; // ปรับได้
-const CONTOUR_STEP=2; // downsample cell size (px) เพื่อความไว (2 หรือ 3 แนะนำ)
+const CONTOUR_LEVELS = [ -20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70,-75,-80 ];
+const CONTOUR_STEP=2; // ปรับละเอียด/ความเร็ว
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -471,7 +471,6 @@ function drawContours(field,w,h,levels,step=2){
   ctx.strokeStyle='#ffffff';
   ctx.lineWidth=1.3;
   ctx.globalAlpha=0.95;
-  // วาดเป็นเส้นสั้น ๆ จำนวนมาก (ไวกว่าเชื่อม path ยาว)
   const nx=Math.floor((w-1)/step), ny=Math.floor((h-1)/step);
   for(const L of levels){
     for(let gy=0; gy<ny; gy++){
@@ -480,32 +479,27 @@ function drawContours(field,w,h,levels,step=2){
         const x0=gx*step, x1=x0+step;
         const i00=y0*w + x0, i10=y0*w + x1, i11=y1*w + x1, i01=y1*w + x0;
         const v00=field[i00], v10=field[i10], v11=field[i11], v01=field[i01];
-        // สร้างรหัสเคสจากการเปรียบเทียบกับระดับ L
         const b0 = v00>=L ? 1:0, b1=v10>=L?1:0, b2=v11>=L?1:0, b3=v01>=L?1:0;
         const code = (b0) | (b1<<1) | (b2<<2) | (b3<<3);
-        if(code===0 || code===15) continue; // ไม่ตัดผ่าน
-        // ฟังก์ชันบอกจุดตัดบนขอบ (interpolate)
+        if(code===0 || code===15) continue;
         const interp=(xa,ya,xb,yb,va,vb)=>{
           const t=(L-va)/((vb-va)||1e-9);
           return [ xa + (xb-xa)*t, ya + (yb-ya)*t ];
         };
-        // จุดกึ่งบน(T),ขวา(R),ล่าง(B),ซ้าย(L)
         const T=interp(x0,y0, x1,y0, v00,v10);
         const R=interp(x1,y0, x1,y1, v10,v11);
         const B=interp(x0,y1, x1,y1, v01,v11);
         const Lp=interp(x0,y0, x0,y1, v00,v01);
-        // เคสมาตรฐาน (resolve 16 cases)
-        // จะวาดเป็นเส้นสั้น ๆ ต่อขอบ
         const seg = (p,q)=>{ ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(q[0],q[1]); ctx.stroke(); };
         switch(code){
           case 1: case 14: seg(Lp,T); break;
           case 2: case 13: seg(T,R); break;
           case 3: case 12: seg(Lp,R); break;
           case 4: case 11: seg(R,B); break;
-          case 5:           seg(Lp,T); seg(R,B); break; // ambiguous; สองเส้น
+          case 5:           seg(Lp,T); seg(R,B); break;
           case 6: case 9 : seg(T,B); break;
           case 7: case 8 : seg(Lp,B); break;
-          case 10:          seg(T,R); seg(Lp,B); break; // ambiguous; สองเส้น
+          case 10:          seg(T,R); seg(Lp,B); break;
         }
       }
     }
@@ -524,7 +518,7 @@ function renderHeatmap(){
   const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
   const hctx=heat.getContext('2d',{willReadFrequently:true});
   const img=hctx.createImageData(heat.width,heat.height), arr=img.data;
-  const field=new Float32Array(heat.width*heat.height); // เก็บ RSSI สำหรับคอนทัวร์
+  const field=new Float32Array(heat.width*heat.height);
   for(let y=0;y<heat.height;y++){
     for(let x=0;x<heat.width;x++){
       const rssi=rssiFromAPs(x,y); field[y*heat.width+x]=rssi;
@@ -535,10 +529,10 @@ function renderHeatmap(){
   hctx.putImageData(img,0,0);
   ctx.save(); ctx.globalAlpha=alpha; if(blurPx>0) ctx.filter=`blur(${blurPx}px)`; ctx.drawImage(heat,0,0); ctx.filter='none'; ctx.restore();
 
-  // 2) วาดคอนทัวร์เส้นขาวบนแคนวาสหลัก (ให้อยู่เหนือฮีตแมป)
+  // 2) วาดคอนทัวร์
   drawContours(field, heat.width, heat.height, CONTOUR_LEVELS, CONTOUR_STEP);
 
-  // 3) วาดวัตถุถาวร (AP/วัสดุ) ทับบนสุด
+  // 3) วาดวัตถุถาวร
   drawPermanent(); hasRendered=true;
 }
 
@@ -731,4 +725,3 @@ UI.imgScaleNum.addEventListener('input', e=> setFloorScaleFromInput(e.target.val
 </script>
 </body>
 </html>
-
