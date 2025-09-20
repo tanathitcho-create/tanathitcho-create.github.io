@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Wi-Fi Heatmap — Survey / Planning</title>
+<title>Wi-Fi Heatmap — Ekahau-like (n fixed)</title>
 <style>
   :root{ --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
          --card:#1b2035; --btn:#232845; --ring:#2a7fff55; --danger:#ff7b7b; }
@@ -24,18 +24,19 @@
   .label{font-size:13px;color:var(--muted);margin:6px 0 6px}
   .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   input[type="file"],input[type="number"],input[type="text"],select,textarea{
-    background:var(--card);border:1px solid #2a3156;color:var(--text);border-radius:10px;padding:8px 10px;outline:none
+    background:var(--card);border:1px solid #2a3156;color:var(--text);
+    border-radius:10px;padding:8px 10px;outline:none
   }
-  textarea{width:100%;min-height:54px;resize:vertical}
   input[type="number"]{width:120px}
   input[type="range"]{width:180px}
+  textarea{width:100%;min-height:54px;resize:vertical}
   button{
     background:var(--btn);border:1px solid #2a3156;color:var(--text);padding:9px 12px;border-radius:11px;
     cursor:pointer;transition:.15s;user-select:none
   }
   button:hover{transform:translateY(-1px);box-shadow:0 6px 18px -10px #000,0 0 0 2px var(--ring)}
   button.danger{background:#3a1b1b;border-color:#5a2a2a;color:#ffc6c6}
-  .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:#muted;display:inline-flex;gap:6px;align-items:center}
+  .chip{font-size:12px;border:1px solid #2a3156;border-radius:999px;padding:4px 9px;color:#9aa4b2;display:inline-flex;gap:6px;align-items:center}
   .legend{display:flex;align-items:center;gap:10px}
   .grad{width:220px;height:12px;border-radius:999px;border:1px solid #2a3156}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
@@ -48,13 +49,13 @@
   .dot{width:10px;height:10px;border-radius:50%}
   details.spec>summary{cursor:pointer;padding:6px 10px;border:1px solid #2a3156;border-radius:8px;background:#1b2141}
   @media (max-width:980px){ .container{grid-template-columns:1fr} }
-
   .stage{position:relative;display:inline-block}
   #canvas,#overlay{display:block}
   #overlay{position:absolute; left:0; top:0; pointer-events:none; z-index:3;}
   #probe{position:absolute;display:none;transform:translate(10px,-10px);
          background:#0e1329;border:1px solid #2a3156;border-radius:10px;padding:6px 8px;
-         color:#e8ecf1;font:600 13px ui-monospace,monospace;pointer-events:none;z-index:4;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+         color:#e8ecf1;font:600 13px ui-monospace,monospace;pointer-events:none;z-index:4;
+         box-shadow:0 6px 20px rgba(0,0,0,.35)}
   #probe .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid #0006}
   #probe .sub{font-weight:500;color:#9aa4b2;margin-top:2px}
 </style>
@@ -68,20 +69,16 @@
   </div>
 </header>
 
-<!-- Planning app -->
+<!-- Planning -->
 <div class="container" id="appPlanning" style="display:grid">
   <aside class="panel">
     <div class="section">
       <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG)</div>
-      <div class="row">
-        <input type="file" id="fileInput" accept="image/*"/>
-        <button id="btnClear">ล้าง</button>
-      </div>
+      <div class="row"><input type="file" id="fileInput" accept="image/*"/><button id="btnClear">ล้าง</button></div>
       <div class="row" style="margin-top:8px">
         <div class="label">ขนาดแปลน (%)</div>
         <input type="range" id="imgScale" min="20" max="150" step="5" value="75"/>
         <input type="number" id="imgScaleNum" min="20" max="150" step="1" value="75" style="width:80px"/>
-        <span class="small muted">ย่อ/ขยายภาพแปลนเท่านั้น</span>
       </div>
     </div>
 
@@ -91,11 +88,11 @@
         <button id="btnScale">🧭 ตั้งสเกล (กดค้าง–ลาก–ปล่อย)</button>
         <span class="chip">สเกลปัจจุบัน: <span id="scaleLabel">ยังไม่ตั้ง</span></span>
       </div>
-      <div class="small muted">ต้องรู้อัตรา px/เมตร เพื่อคำนวณระยะจาก AP → พิกัด</div>
+      <div class="small muted">ต้องรู้อัตรา px/เมตร เพื่อคำนวณระยะจาก AP → ทุกพิกัด</div>
     </div>
 
     <div class="section">
-      <div class="label">3) วาง Access Point (มีพรีเซ็ต)</div>
+      <div class="label">3) วาง Access Point (สไตล์ Ekahau: n คงที่ตามย่าน)</div>
       <div class="grid" style="align-items:end">
         <div>
           <div class="label">พรีเซ็ต AP</div>
@@ -116,16 +113,12 @@
           <input type="number" id="apP0" value="-40" step="1"/>
         </div>
         <div>
-          <div class="label">n (Path-loss exponent)</div>
-          <input type="number" id="apN" value="2.2" step="0.1"/>
+          <div class="label">ย่านความถี่ (Band)</div>
+          <select id="apBand">
+            <option value="2.4">2.4 GHz</option>
+            <option value="5">5 GHz</option>
+          </select>
         </div>
-      </div>
-
-      <div class="row" style="margin-top:6px; gap:10px">
-        <label class="chip" style="gap:6px">
-          <input type="checkbox" id="lockN" style="margin-right:6px"/> ล็อก n ทุก AP
-        </label>
-        <input type="number" id="lockNValue" value="2.2" step="0.1" title="ค่า n ที่ใช้กับทุก AP เมื่อเปิดล็อก"/>
       </div>
 
       <details class="spec" style="margin-top:10px">
@@ -153,7 +146,7 @@
         <button id="btnAPClear" class="danger">🗑️ ล้าง AP ทั้งหมด</button>
       </div>
       <div id="apList" style="margin-top:10px;display:grid;gap:6px;"></div>
-      <div class="small muted">วางได้หลาย AP — ระบบรวมกำลัง (mW) แล้วแปลงเป็น dBm</div>
+      <div class="small muted">ระบบจะคง n ตามย่านความถี่: 2.4 GHz≈2.2, 5 GHz≈2.4 (ซ่อน)</div>
     </div>
 
     <div class="section">
@@ -222,53 +215,44 @@
       <span class="badge">โหมด: Survey (Placeholder)</span>
       <span class="muted small">หน้านี้เว้นว่างไว้ให้พัฒนาต่อ</span>
     </div>
-    <div class="surveyBlank" style="background:#fff;border-radius:12px;border:1px dashed #ccc;min-height:300px;display:flex;align-items:center;justify-content:center;color:#333;font:600 18px/1.3 ui-sans-serif">Survey Mode — Blank Canvas</div>
+    <div class="surveyBlank" style="background:#fff;border-radius:12px;border:1px dashed #ccc; min-height:300px; display:flex; align-items:center; justify-content:center; color:#333; font:600 18px/1.3 ui-sans-serif">Survey Mode — Blank Canvas</div>
   </main>
 </div>
 
 <script>
-/* ===== AP PRESETS ===== */
+/* ===== Presets (ตัวอย่าง 2 รุ่นจากที่ให้) ===== */
 const AP_PRESETS = {
   tplink_ax20: {
     name: "TP-Link Archer AX20 (AX1800 Wi-Fi 6)",
-    defaults: { p0: -40, n: 2.2 },
+    defaults: { p0: -40, band: '5' }, // ส่วนใหญ่ใช้งาน 5GHz เป็นหลัก
     spec: {
-      model:"Archer AX20 AX1800 Wi-Fi 6 Router",
-      buttons:"Reset, WPS/Wi-Fi, Power, LED On/Off",
-      power:"12 V ⎓ 1.5 A",
-      antenna:"4× Fixed High-Performance Antennas (beamforming)",
+      model:"Archer AX20", buttons:"Reset, WPS/Wi-Fi, Power, LED On/Off",
+      power:"12 V ⎓ 1.5 A", antenna:"4× Fixed High-Performance (beamforming)",
       iface:"1× Gbps WAN, 4× Gbps LAN",
-      standards:"802.11ax/ac/n/a (5 GHz), 802.11ax/n/b/g (2.4 GHz); Dual-band",
+      standards:"802.11ax/ac/n/a (5 GHz), 802.11ax/n/b/g (2.4 GHz)",
       rate:"AX1800 — 5G: 1201 Mbps; 2.4G: 574 Mbps",
-      rf:"—",
-      functions:"SPI FW, Access Control, IP/MAC Binding",
-      cert:"FCC, CE, RoHS",
-      sysreq:"IE11+, Firefox 12+, Chrome 20+, Safari 4+",
-      env:"Op 0–40°C; St −40–70°C; RH 10–90/5–90%",
-      notes:"260.2×135×38.6 mm; Warranty: Lifetime"
+      rf:"—", functions:"SPI FW, ACL, IP/MAC Binding",
+      cert:"FCC, CE, RoHS", sysreq:"IE11+, Firefox12+, Chrome20+, Safari4+",
+      env:"Op 0–40°C; St −40–70°C; RH 10–90/5–90%", notes:"260.2×135×38.6 mm"
     }
   },
   totolink_a3002ru: {
     name: "TOTOLINK A3002RU (AC1200)",
-    defaults: { p0: -42, n: 2.4 },
+    defaults: { p0: -42, band: '5' },
     spec: {
-      model:"A3002RU",
-      buttons:"RST, WPS, Power",
-      power:"12 V ⎓ 2 A",
-      antenna:"2×5 dBi (2.4G) + 2×5 dBi (5G)",
-      iface:"4× Gbps LAN, 1× Gbps WAN, 1× USB 2.0",
-      standards:"802.11ac/n/g/b/a; Dual-band",
+      model:"A3002RU", buttons:"RST, WPS, Power", power:"12 V ⎓ 2 A",
+      antenna:"2×5 dBi (2.4G) + 2×5 dBi (5G)", iface:"4× Gbps LAN, 1× Gbps WAN, 1× USB2.0",
+      standards:"802.11ac/n/g/b/a (Dual-Band)",
       rate:"2.4G up to 300 Mbps; 5G up to 867 Mbps",
-      rf:"EIRP 2.4G <20 dBm; 5G <23 dBm; RX sens. refs provided",
+      rf:"EIRP 2.4G <20 dBm; 5G <23 dBm; RX sens. refs",
       functions:"WISP/Client, Repeater, Router, Bridge w/ AP; WEP/WPA/WPA2; ACL; SPI FW; QoS; TR-069; DDNS; DoS; SNMP",
-      cert:"—", sysreq:"—", env:"—",
-      notes:"LEDs: Power, CPU, 2.4G, 5G, WAN, 4×LAN, USB"
+      cert:"—", sysreq:"—", env:"—", notes:"LEDs: Power, CPU, 2.4G, 5G, WAN, 4×LAN, USB"
     }
   }
 };
 
-/* ===== Mode switch (header pills) ===== */
-let appMode='planning'; // default
+/* ===== Mode switch ===== */
+let appMode='planning';
 const appPlanning=document.getElementById('appPlanning');
 const appSurvey=document.getElementById('appSurvey');
 const pillPlanning=document.getElementById('pillPlanning');
@@ -286,8 +270,9 @@ function setMode(mode){
 pillPlanning.onclick=()=>setMode('planning');
 pillSurvey.onclick=()=>setMode('survey');
 
-/* ===== constants & helpers ===== */
+/* ===== constants (คงที่แบบ Ekahau) ===== */
 const RSSI_MIN=-80, P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
+const N_BY_BAND = { '2.4': 2.2, '5': 2.4 }; // ค่าคงที่ (ซ่อน) — ปรับผ่านวัสดุ/EIRP แทน
 const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -303,9 +288,6 @@ let floorImg=null, floorScale=0.75;
 let aps=[], segments=[];
 let mode='idle', dragging=false, dragStart=null;
 let scale={pxPerMeter:null}, hasRendered=false;
-
-/* lock-n */
-let lockN=false, lockNValue=2.2;
 
 /* materials */
 const MATERIALS={
@@ -329,21 +311,22 @@ const UI={
   probe:$('#probe'), probeVal:$('#probeVal'), probeMeta:$('#probeMeta'), probeSw:$('#sw'),
   stage:$('#stage'),
   imgScale:$('#imgScale'), imgScaleNum:$('#imgScaleNum'),
-  apPreset:$('#apPreset')
+  apPreset:$('#apPreset'),
+  apBand:$('#apBand')
 };
 
-/* ===== preset dropdown ===== */
+/* ===== preset selector ===== */
 (function initApPreset(){
   Object.keys(AP_PRESETS).forEach(key=>{
     const o=document.createElement('option'); o.value=key; o.textContent=AP_PRESETS[key].name;
     UI.apPreset.appendChild(o);
   });
-  $('#btnApplyPreset').addEventListener('click', ()=>{
+  document.getElementById('btnApplyPreset').addEventListener('click', ()=>{
     const p=AP_PRESETS[UI.apPreset.value]; if(!p) return;
     const num=aps.length+1;
-    $('#apLabel').value = `${p.name.split('(')[0].trim()}-${num}`;
-    $('#apP0').value = p.defaults?.p0 ?? -40;
-    $('#apN').value  = p.defaults?.n  ?? 2.2;
+    document.getElementById('apLabel').value = `${p.name.split('(')[0].trim()}-${num}`;
+    document.getElementById('apP0').value   = p.defaults?.p0 ?? -40;
+    UI.apBand.value = p.defaults?.band ?? '5';
     const s=p.spec||{};
     const set=(id,v)=>document.getElementById(id).value=v||'';
     set('apSpec_model',s.model); set('apSpec_buttons',s.buttons); set('apSpec_power',s.power);
@@ -353,7 +336,7 @@ const UI={
   });
 })();
 
-/* ===== layout helpers ===== */
+/* ===== size & draw ===== */
 function applyCanvasCSSSize(){
   canvas.style.width=canvas.width+'px'; canvas.style.height=canvas.height+'px';
   overlay.style.width=canvas.width+'px'; overlay.style.height=canvas.height+'px';
@@ -366,7 +349,6 @@ function fitCanvasToImage(img){
 }
 window.addEventListener('resize', applyCanvasCSSSize);
 
-/* ===== base/permanent draw ===== */
 function drawBase(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(floorImg){
@@ -384,15 +366,15 @@ function drawBase(){
 function drawPermanent(){
   ctx.lineWidth=3;
   segments.forEach(s=>{
-    const m=MATERIALS[s.type]||{color:'#fff'}; ctx.strokeStyle=m.color;
-    ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
+    const color=(MATERIALS[s.type]||{color:'#fff'}).color;
+    ctx.strokeStyle=color; ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
   });
   aps.forEach(a=>{
     ctx.fillStyle='#8fd3ff'; ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#2a7fff'; ctx.lineWidth=2; ctx.stroke();
     ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
-    const nShow=lockN?lockNValue:a.n; const model=a.spec?.model?` (${a.spec.model})`:'';
-    ctx.fillText(`${a.label||'AP'}${model} · P0:${a.p0} n:${nShow}`, a.x+10, a.y-8);
+    const model=a.spec?.model?` (${a.spec.model})`:'';
+    ctx.fillText(`${a.label||'AP'}${model} · P0:${a.p0} · ${a.band}GHz`, a.x+10, a.y-8);
   });
 }
 
@@ -413,7 +395,7 @@ function drawArrow(a,b,{color='#6ae3ff',width=3.5,head=12,dash=[10,6],label=''}=
   octx.restore();
 }
 
-/* ===== legend & color map (−67 เทา, −60 เหลือง, −30 เขียว) ===== */
+/* ===== legend & color map ===== */
 function makeFixedLegend(){
   const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
   const c=cvs.getContext('2d');
@@ -449,21 +431,21 @@ function segIntersect(p1,p2,q1,q2){
 }
 function pathObstacleLoss(pFrom,pTo){ let loss=0; for(const s of segments){ if(segIntersect(pFrom,pTo,s.a,s.b)) loss+=(+s.att||0); } return loss; }
 
-/* ===== RSSI model ===== */
+/* ===== RSSI model (n คงที่ตามย่าน) ===== */
 function rssiFromAPs(x,y){
   if(!aps.length||!scale.pxPerMeter) return RSSI_MIN;
   const P={x,y}; let sum_mW=0;
   for(const a of aps){
     const d_px=Math.hypot(x-a.x,y-a.y), d_m=Math.max(1e-3, d_px/scale.pxPerMeter);
     const loss=pathObstacleLoss(P,a);
-    const nEff=lockN?lockNValue:a.n;
+    const nEff = N_BY_BAND[a.band] ?? 2.3; // fallback
     const rssi=a.p0 - 10*nEff*Math.log10(d_m) - loss;
     sum_mW += Math.pow(10, rssi/10);
   }
   return 10*Math.log10(Math.max(1e-15,sum_mW));
 }
 
-/* ===== render heatmap ===== */
+/* ===== render ===== */
 function renderHeatmap(){
   if(!floorImg||aps.length===0) return;
   const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
@@ -504,7 +486,7 @@ function refreshAPList(){
     const row=document.createElement('div'); row.className='apRow small';
     const model=a.spec?.model?` (${escapeHtml(a.spec.model)})`:'';
     row.innerHTML=`<div>
-        <strong>${escapeHtml(a.label||'AP')}${model}</strong> · P0:${a.p0} dBm · n:${lockN?lockNValue:a.n}
+        <strong>${escapeHtml(a.label||'AP')}${model}</strong> · P0:${a.p0} dBm · Band:${a.band} GHz
         <div class="muted">(${a.x|0},${a.y|0})</div>
       </div>
       <div class="row">
@@ -556,11 +538,11 @@ $('#btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้
 $('#btnRender').onclick =()=>{ renderHeatmap(); hideProbe(); };
 $('#btnExport').onclick =()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
 
-/* ===== save/load ===== */
+/* ===== Save/Load ===== */
 $('#btnSave').onclick=()=>{
   const payload={ aps, segments,
     alpha:+($('#alpha').value||0.6), blurPx:+($('#blurPx').value||16),
-    scale:scale.pxPerMeter, floorScale, lockN, lockNValue };
+    scale:scale.pxPerMeter, floorScale };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
   a.href=url; a.download='heatmap_project_planning.json'; a.click(); URL.revokeObjectURL(url);
@@ -570,10 +552,10 @@ $('#loadJson').addEventListener('change', e=>{
   const reader=new FileReader();
   reader.onload=()=>{ try{
       const obj=JSON.parse(reader.result);
-      aps=(obj.aps||[]).map(a=>({ ...a, spec:a.spec||{} })); segments=obj.segments||[];
+      aps=(obj.aps||[]).map(a=>({ ...a, spec:a.spec||{}, band:a.band||'5' }));
+      segments=obj.segments||[];
       $('#alpha').value=obj.alpha??0.6; $('#blurPx').value=obj.blurPx??16;
       scale.pxPerMeter=obj.scale||null; floorScale=clamp(obj.floorScale ?? floorScale,0.2,1.5);
-      lockN=!!obj.lockN; lockNValue=parseFloat(obj.lockNValue ?? 2.2); syncLockNUI();
       UI.imgScale.value=Math.round(floorScale*100); UI.imgScaleNum.value=Math.round(floorScale*100);
       UI.scaleLabel.textContent=scale.pxPerMeter?`${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
       drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); refreshMatList();
@@ -581,7 +563,7 @@ $('#loadJson').addEventListener('change', e=>{
   reader.readAsText(f);
 });
 
-/* ===== image io ===== */
+/* ===== image I/O ===== */
 $('#fileInput').addEventListener('change', e=>{
   const f=e.target.files[0]; if(!f) return;
   const img=new Image(); img.onload=()=>{ floorImg=img; fitCanvasToImage(img); drawBase(); drawPermanent(); };
@@ -628,14 +610,13 @@ canvas.addEventListener('click', e=>{
     if(!scale.pxPerMeter) return;
     const label=$('#apLabel').value.trim()||`AP-${aps.length+1}`;
     const p0=parseFloat($('#apP0').value||'-40');
-    const n =($('#lockN').checked? parseFloat($('#lockNValue').value||'2.2')
-                                 : parseFloat($('#apN').value||'2.2'));
+    const band=$('#apBand').value==='2.4'?'2.4':'5';
     const g=id=>document.getElementById(id).value.trim();
     const spec={ model:g('apSpec_model'), buttons:g('apSpec_buttons'), power:g('apSpec_power'),
       antenna:g('apSpec_ant'), iface:g('apSpec_iface'), standards:g('apSpec_standards'),
       rate:g('apSpec_rate'), rf:g('apSpec_rf'), functions:g('apSpec_functions'),
       cert:g('apSpec_cert'), sysreq:g('apSpec_sysreq'), env:g('apSpec_env'), notes:g('apSpec_notes') };
-    aps.push({x,y,label,p0,n,spec});
+    aps.push({x,y,label,p0,band,spec});
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList();
   }else if(mode==='idle'){ if(!hasRendered) return; renderHeatmap(); showProbeAt(x,y); }
 });
@@ -649,14 +630,6 @@ document.addEventListener('keydown', e=>{
   if(e.key==='h'||e.key==='H'){ renderHeatmap(); hideProbe(); }
 });
 
-/* ===== lock-n ===== */
-function syncLockNUI(){
-  const apNInput=$('#apN'); lockN=$('#lockN').checked; lockNValue=parseFloat($('#lockNValue').value||'2.2');
-  apNInput.disabled=lockN;
-}
-$('#lockN').addEventListener('change', ()=>{ syncLockNUI(); if(hasRendered) renderHeatmap(); });
-$('#lockNValue').addEventListener('input', ()=>{ syncLockNUI(); if($('#lockN').checked && hasRendered) renderHeatmap(); });
-
 /* ===== floor scale controls ===== */
 function setFloorScaleFromInput(v){
   const pct=clamp(parseInt(v,10)||75,20,150);
@@ -666,11 +639,15 @@ function setFloorScaleFromInput(v){
 UI.imgScale.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 UI.imgScaleNum.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 
-/* ===== init (ไม่มีหน้าจอเลือกตอนเริ่มแล้ว) ===== */
+/* ===== init ===== */
 (function init(){
   applyCanvasCSSSize();
-  setMode('planning'); // เริ่มใน Planning ทันที
+  setMode('planning'); // เข้า Planning ทันที
   UI.scaleLabel.textContent='ยังไม่ตั้ง';
+  // materials select พร้อมแล้ว
+  // เติม preset ลง dropdown
+  // ตั้งค่า band เริ่มต้นเป็น 5 GHz
+  UI.apBand.value='5';
   drawBase(); drawPermanent();
   UI.apPreset.value='tplink_ax20';
 })();
