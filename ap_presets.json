@@ -1,0 +1,25 @@
+{
+  "TP-Link Archer AX20 AX1800": {
+    "vendor": "TP-Link",
+    "model": "Archer AX20",
+    "bands": ["2.4", "5"],
+    "p0": { "2.4": -41, "5": -40 },
+    "eirp_dbm": { "2.4": 20, "5": 23 },
+    "antennas": "4x Fixed High-Performance Antennas",
+    "standards": ["802.11ax","ac","n","a","b","g"],
+    "notes": "AX1800; 2.4GHz: 574 Mbps; 5GHz: 1201 Mbps; ปุ่ม: Reset/WPS/Power/LED"
+  },
+  "TOTOLINK A3002RU": {
+    "vendor": "TOTOLINK",
+    "model": "A3002RU",
+    "bands": ["2.4", "5"],
+    "p0": { "2.4": -42, "5": -41 },
+    "eirp_dbm": { "2.4": 20, "5": 23 },
+    "rx_sensitivity": {
+      "2.4": { "11b": -79, "11g": -68, "11n20": -65, "11n40": -61 },
+      "5":   { "11a": -68, "11ac20": -65, "11ac40": -61, "11ac80": -51 }
+    },
+    "interfaces": ["4x LAN Gigabit", "1x WAN Gigabit", "1x USB 2.0"],
+    "notes": "AC1200 dual band; ปุ่ม: RST/WPS/Power"
+  }
+}
