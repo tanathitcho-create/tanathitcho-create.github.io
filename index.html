@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Wi-Fi Heatmap — Survey / Planning (Fixed)</title>
+<title>Wi-Fi Heatmap — Survey / Planning</title>
 <style>
   :root{ --bg:#0f1220; --panel:#171a2b; --muted:#9aa4b2; --text:#e8ecf1;
          --card:#1b2035; --btn:#232845; --ring:#2a7fff55; --danger:#ff7b7b; }
@@ -122,7 +122,16 @@
     </div>
 
     <div class="section">
-      <div class="label">3) วาง Access Point</div>
+      <div class="label">3) เลือกพรีเซ็ต Access Point</div>
+      <div class="row">
+        <select id="apPreset" style="min-width:220px"><option value="">(กำลังโหลดพรีเซ็ต...)</option></select>
+        <button id="btnUsePreset">ใช้พรีเซ็ต</button>
+      </div>
+      <div class="small muted">พรีเซ็ตโหลดจากไฟล์ <code>ap_presets.json</code> ใน repo (แก้ไข/เพิ่มได้)</div>
+    </div>
+
+    <div class="section">
+      <div class="label">4) วาง Access Point</div>
       <div class="grid">
         <div>
           <div class="label">ชื่อ/SSID</div>
@@ -147,7 +156,7 @@
     </div>
 
     <div class="section">
-      <div class="label">4) วัสดุ/สิ่งกีดขวาง</div>
+      <div class="label">5) วัสดุ/สิ่งกีดขวาง</div>
       <div class="grid">
         <div>
           <div class="label">ชนิดวัสดุ</div>
@@ -167,7 +176,7 @@
     </div>
 
     <div class="section">
-      <div class="label">5) ตั้งค่าเรนเดอร์</div>
+      <div class="label">6) ตั้งค่าเรนเดอร์</div>
       <div class="grid">
         <div>
           <div class="label">ความเนียน Blur (px)</div>
@@ -186,11 +195,11 @@
         <div id="grad" class="grad"></div>
         <div class="small"><span id="legendMin">-80</span> dBm ⟷ <span id="legendMax">-50</span> dBm</div>
       </div>
-      <div class="small muted">โทนสี: ≤−67 เทา (อ่อนลงถึง −80) • −60 เหลือง • −30 เขียว</div>
+      <div class="small muted">สี: ≤−67 เทา (อ่อนลงถึง −80) • −60 เหลือง • −30 เขียว • เส้นขาวทุก −5 dBm (−20..−80)</div>
     </div>
 
     <div class="section">
-      <div class="label">6) บันทึก/โหลดโปรเจกต์</div>
+      <div class="label">7) บันทึก/โหลดโปรเจกต์</div>
       <div class="row">
         <button id="btnSave">💾 Save JSON</button>
         <input type="file" id="loadJson" accept="application/json"/>
@@ -220,7 +229,7 @@
   </main>
 </div>
 
-<!-- Survey mode layout (unchanged placeholder) -->
+<!-- Survey mode layout (placeholder) -->
 <div class="container" id="appSurvey" style="display:none;grid-template-columns:1fr">
   <main class="panel" style="display:flex;flex-direction:column;gap:12px">
     <div class="row">
@@ -231,417 +240,6 @@
   </main>
 </div>
 
-<script>
-/* ===== app mode switch ===== */
-let appMode = 'planning'; // default
-const modePicker = document.getElementById('modePicker');
-const appPlanning = document.getElementById('appPlanning');
-const appSurvey   = document.getElementById('appSurvey');
-const pillPlanning = document.getElementById('pillPlanning');
-const pillSurvey   = document.getElementById('pillSurvey');
-const pickPlanning = document.getElementById('pickPlanning');
-const pickSurvey   = document.getElementById('pickSurvey');
-
-function setModeApp(mode){
-  appMode = mode;
-  if(mode==='planning'){
-    appPlanning.style.display='grid';
-    appSurvey.style.display='none';
-    pillPlanning.classList.add('active');
-    pillSurvey.classList.remove('active');
-  }else{
-    appPlanning.style.display='none';
-    appSurvey.style.display='grid';
-    pillPlanning.classList.remove('active');
-    pillSurvey.classList.add('active');
-  }
-  modePicker.style.display='none';
-}
-pillPlanning.onclick = ()=> setModeApp('planning');
-pillSurvey.onclick   = ()=> setModeApp('survey');
-pickPlanning.onclick = ()=> setModeApp('planning');
-pickSurvey.onclick   = ()=> setModeApp('survey');
-
-/* ===== thresholds & utilities (Planning) ===== */
-const RSSI_MIN=-80, RSSI_MAX=-50;
-const P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
-const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
-const N_BY_BAND={'2.4':2.2,'5':2.4}; // Ekahau-like fixed per band
-
-const $=s=>document.querySelector(s);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-const lerp=(a,b,t)=>a+(b-a)*t;
-const mix=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
-const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
-
-/* ===== materials ===== */
-const MATERIALS={
-  drywall:{name:'ผนังยิปซัม (Drywall)',color:'#98c1ff',att:3},
-  glass:{name:'กระจก',color:'#7de1ff',att:4},
-  wood:{name:'ไม้',color:'#9ae27b',att:5},
-  brick:{name:'อิฐ/คอนกรีตมวลเบา',color:'#ffb673',att:8},
-  concrete:{name:'คอนกรีตเสริมเหล็ก',color:'#ff8f8f',att:12},
-  metal:{name:'โลหะแผ่น/ประตูเหล็ก',color:'#ffd36a',att:20},
-  human:{name:'ร่างกายคน (เฉลี่ย)',color:'#d6b3ff',att:3}
-};
-const matTypeSel=$('#matType');
-for(const k of Object.keys(MATERIALS)){
-  const o=document.createElement('option'); o.value=k; o.textContent=MATERIALS[k].name; matTypeSel.appendChild(o);
-}
-matTypeSel.value='brick'; $('#matAtt').value=MATERIALS['brick'].att;
-matTypeSel.addEventListener('change',()=>$('#matAtt').value=MATERIALS[matTypeSel.value].att);
-
-/* ===== canvases & state ===== */
-const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
-const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
-let floorImg=null;
-let aps=[]; let segments=[];
-let mode='idle'; let dragging=false; let dragStart=null;
-let scale={pxPerMeter:null}; let hasRendered=false;
-
-const UI={
-  modeBadge:$('#modeBadge'), scaleLabel:$('#scaleLabel'),
-  apList:$('#apList'), matList:$('#matList'),
-  legendMin:$('#legendMin'), legendMax:$('#legendMax'),
-  probe:$('#probe'), probeVal:$('#probeVal'), probeMeta:$('#probeMeta'), probeSw:$('#sw'),
-  stage:$('#stage'),
-};
-
-/* ===== size sync ===== */
-function applyCanvasCSSSize(){
-  canvas.style.width = canvas.width + 'px';
-  canvas.style.height = canvas.height + 'px';
-  overlay.style.width = canvas.width + 'px';
-  overlay.style.height = canvas.height + 'px';
-  overlay.style.left = '0px';
-  overlay.style.top  = '0px';
-}
-function fitCanvasToImage(img){
-  const maxW=1920,maxH=1080;
-  const k=Math.min(maxW/img.width, maxH/img.height, 1);
-  const w=Math.round(img.width*k), h=Math.round(img.height*k);
-  canvas.width=w; canvas.height=h;
-  overlay.width=w; overlay.height=h;
-  applyCanvasCSSSize();
-}
-window.addEventListener('resize', applyCanvasCSSSize);
-
-/* ===== base/permanent ===== */
-function drawBase(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(floorImg){ ctx.drawImage(floorImg,0,0,canvas.width,canvas.height); }
-  else{
-    ctx.fillStyle='#0c1022'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.strokeStyle='#1c264a'; ctx.lineWidth=1;
-    for(let x=0;x<canvas.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
-    for(let y=0;y<canvas.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
-  }
-  hideProbe();
-}
-function drawPermanent(){
-  // materials
-  ctx.lineWidth=3;
-  segments.forEach(s=>{
-    const m=MATERIALS[s.type]||{color:'#fff',name:s.type};
-    ctx.strokeStyle=m.color; ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
-    const mx=(s.a.x+s.b.x)/2, my=(s.a.y+s.b.y)/2;
-    ctx.fillStyle='#e8ecf1'; ctx.font='11px ui-monospace,monospace';
-    ctx.fillText(`${m.name} · ${s.att} dB`, mx+6, my-6);
-  });
-  // APs
-  aps.forEach(a=>{
-    ctx.fillStyle='#8fd3ff';
-    ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#2a7fff'; ctx.lineWidth=2; ctx.stroke();
-    ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
-    ctx.fillText(`${a.label||'AP'} · P0:${a.p0}dBm ${a.band||'5'}GHz`, a.x+10, a.y-8);
-  });
-}
-
-/* ===== overlay arrows ===== */
-function clearOverlay(){ octx.clearRect(0,0,overlay.width,overlay.height); }
-function drawArrow(a,b,opts={}){
-  const {color='#6ae3ff',width=3.5,head=12,dash=[10,6],label=''}=opts;
-  octx.save();
-  octx.lineWidth=width; octx.setLineDash(dash); octx.strokeStyle=color;
-  octx.beginPath(); octx.moveTo(a.x,a.y); octx.lineTo(b.x,b.y); octx.stroke();
-  octx.setLineDash([]);
-  const ang=Math.atan2(b.y-a.y,b.x-a.x);
-  octx.beginPath();
-  octx.moveTo(b.x,b.y);
-  octx.lineTo(b.x-head*Math.cos(ang - Math.PI/7), b.y-head*Math.sin(ang - Math.PI/7));
-  octx.lineTo(b.x-head*Math.cos(ang + Math.PI/7), b.y-head*Math.sin(ang + Math.PI/7));
-  octx.closePath(); octx.fillStyle=color; octx.fill();
-  octx.fillStyle='#fff'; octx.strokeStyle='#000'; octx.lineWidth=2;
-  [a,b].forEach(p=>{ octx.beginPath(); octx.arc(p.x,p.y,4,0,Math.PI*2); octx.fill(); octx.stroke(); });
-  if(label){ octx.font='12px ui-monospace,monospace'; octx.fillStyle='#cfe6ff'; octx.fillText(label, b.x+10, b.y-8); }
-  octx.restore();
-}
-
-/* ===== legend & color ===== */
-function makeFixedLegend(){
-  const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
-  const c=cvs.getContext('2d');
-  // build gradient for: gray (<=-67, lightening to -80) -> yellow (-60) -> green (-30)
-  const span1=P_GRAY-RSSI_MIN, span2=P_YELLOW-P_GRAY, span3=P_GREEN-P_YELLOW, usable=240;
-  const s=usable/(span1+span2+span3);
-  const px1=Math.round(span1*s), px2=Math.round(span2*s), px3=Math.round(span3*s), pxG=256-(px1+px2+px3);
-  let x=0;
-  for(let i=0;i<px1;i++,x++){ const t=i/(px1||1), col=mix(GRAY_LIGHT,GRAY_BASE,t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
-  for(let i=0;i<px2;i++,x++){ const t=i/(px2||1), col=mix(GRAY_BASE,[255,255,0],t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
-  for(let i=0;i<px3;i++,x++){ const t=i/(px3||1), col=mix([255,255,0],[0,255,0],t); c.fillStyle=rgbStr(col); c.fillRect(x,0,1,1); }
-  c.fillStyle='rgb(0,255,0)'; c.fillRect(x,0,pxG,1);
-  g.style.backgroundImage=`url(${cvs.toDataURL()})`;
-}
-function colorFromRSSI(v){
-  if(v<=P_GRAY){ const t=clamp((P_GRAY-v)/(P_GRAY-RSSI_MIN),0,1); return mix(GRAY_BASE,GRAY_LIGHT,t); }
-  if(v<=P_YELLOW){ const t=(v-P_GRAY)/(P_YELLOW-P_GRAY); return mix(GRAY_BASE,[255,255,0],t); }
-  if(v<=P_GREEN){ const t=(v-P_YELLOW)/(P_GREEN-P_YELLOW); return mix([255,255,0],[0,255,0],t); }
-  return [0,255,0];
-}
-
-/* ===== geometry & obstacle loss ===== */
-function orient(a,b,c){ return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x); }
-function onSeg(a,b,c){ return Math.min(a.x,b.x)-1e-6<=c.x && c.x<=Math.max(a.x,b.x)+1e-6 &&
-                             Math.min(a.y,b.y)-1e-6<=c.y && c.y<=Math.max(a.y,b.y)+1e-6; }
-function segIntersect(p1,p2,q1,q2){
-  const o1=orient(p1,p2,q1),o2=orient(p1,p2,q2),o3=orient(q1,q2,p1),o4=orient(q1,q2,p2);
-  if((o1*o2<0)&&(o3*o4<0)) return true;
-  if(Math.abs(o1)<1e-8 && onSeg(p1,p2,q1)) return true;
-  if(Math.abs(o2)<1e-8 && onSeg(p1,p2,q2)) return true;
-  if(Math.abs(o3)<1e-8 && onSeg(q1,q2,p1)) return true;
-  if(Math.abs(o4)<1e-8 && onSeg(q1,q2,p2)) return true;
-  return false;
-}
-function pathObstacleLoss(pFrom,pTo){
-  let loss=0; for(const s of segments){ if(segIntersect(pFrom,pTo,s.a,s.b)) loss+=(+s.att||0); } return loss;
-}
-
-/* ===== AP model ===== */
-// RSSI(d) = P0 - 10*n*log10(d) - obstacleLoss ; d (m)
-function rssiFromAPs(x,y){
-  if(!aps.length) return RSSI_MIN;
-  if(!scale.pxPerMeter) return RSSI_MIN;
-  const P={x,y}; let sum_mW=0;
-  for(const a of aps){
-    const d_px=Math.hypot(x-a.x,y-a.y);
-    const d_m=Math.max(1e-3,d_px/scale.pxPerMeter);
-    const lossObs=pathObstacleLoss(P,a);
-    const n = N_BY_BAND[a.band||'5'] ?? 2.3;
-    const rssi=a.p0 - 10*n*Math.log10(d_m) - lossObs;
-    sum_mW += Math.pow(10, rssi/10);
-  }
-  return 10*Math.log10(Math.max(1e-15,sum_mW));
-}
-
-/* ===== heatmap render (per-pixel + blur) ===== */
-function renderHeatmap(){
-  if(aps.length===0) return;
-  const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
-  const blurPx=Math.max(0,parseInt($('#blurPx').value||'16',10));
-  UI.legendMin.textContent=RSSI_MIN; UI.legendMax.textContent=RSSI_MAX; makeFixedLegend();
-  drawBase();
-  const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
-  const hctx=heat.getContext('2d',{willReadFrequently:true});
-  let img=hctx.createImageData(heat.width,heat.height), arr=img.data;
-  for(let y=0;y<heat.height;y++){
-    for(let x=0;x<heat.width;x++){
-      const rssi=rssiFromAPs(x,y); const [r,g,b]=colorFromRSSI(rssi);
-      const i=(y*heat.width+x)*4; arr[i]=r; arr[i+1]=g; arr[i+2]=b; arr[i+3]=255;
-    }
-  }
-  hctx.putImageData(img,0,0);
-  ctx.save(); ctx.globalAlpha=alpha; if(blurPx>0) ctx.filter=`blur(${blurPx}px)`;
-  ctx.drawImage(heat,0,0); ctx.filter='none'; ctx.restore();
-  drawPermanent(); hasRendered=true;
-}
-
-/* ===== probe ===== */
-function showProbeAt(x,y){
-  ctx.save(); ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.globalAlpha=.9; ctx.fill();
-  ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke(); ctx.restore();
-  const rssi=rssiFromAPs(x,y), col=colorFromRSSI(rssi);
-  UI.probeVal.textContent=`${rssi.toFixed(1)} dBm`; UI.probeMeta.textContent=`x=${x|0}, y=${y|0}`; UI.probeSw.style.background=rgbStr(col);
-  const stageRect=UI.stage.getBoundingClientRect(); const cRect=canvas.getBoundingClientRect();
-  const px=(x/canvas.width)*cRect.width + (cRect.left-stageRect.left);
-  const py=(y/canvas.height)*cRect.height + (cRect.top-stageRect.top);
-  UI.probe.style.left=`${px}px`; UI.probe.style.top=`${py}px`; UI.probe.style.display='block';
-}
-function hideProbe(){ UI.probe.style.display='none'; }
-
-/* ===== lists ===== */
-function escapeHtml(s){ return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function refreshAPList(){
-  $('#apList').innerHTML='';
-  aps.forEach((a,i)=>{
-    const row=document.createElement('div'); row.className='apRow small';
-    row.innerHTML=`<div><strong>${escapeHtml(a.label||'AP')}</strong> · P0:${a.p0} dBm · ${a.band||'5'}GHz
-      <div class="muted">(${a.x|0},${a.y|0})</div></div>
-      <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
-    row.querySelector('button').onclick=e=>{ aps.splice(+e.target.getAttribute('data-i'),1);
-      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
-    $('#apList').appendChild(row);
-  });
-}
-function refreshMatList(){
-  $('#matList').innerHTML='';
-  segments.forEach((s,i)=>{
-    const m=MATERIALS[s.type]||{name:s.type,color:'#fff'};
-    const row=document.createElement('div'); row.className='matRow small';
-    row.innerHTML=`<div style="display:flex;align-items:center;gap:8px">
-        <span class="dot" style="background:${m.color}"></span>
-        <div><div><strong>${m.name}</strong> · ${s.att} dB</div>
-        <div class="muted">A(${s.a.x|0},${s.a.y|0}) → B(${s.b.x|0},${s.b.y|0})</div></div>
-      </div>
-      <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
-    row.querySelector('button').onclick=e=>{ segments.splice(+e.target.getAttribute('data-i'),1);
-      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
-    $('#matList').appendChild(row);
-  });
-}
-
-/* ===== toolbar: CLICK HANDLERS (สำคัญที่สุดที่หายไปก่อนหน้านี้) ===== */
-document.getElementById('btnScale').onclick=()=>{ mode='scale'; $('#modeBadge').textContent='โหมด: ตั้งสเกล'; hideProbe(); };
-document.getElementById('btnIdle').onclick =()=>{ mode='idle';  $('#modeBadge').textContent='โหมด: Idle'; hideProbe(); };
-document.getElementById('btnAP').onclick   =()=>{ mode='ap';    $('#modeBadge').textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
-document.getElementById('btnMat').onclick  =()=>{ mode='mat';   $('#modeBadge').textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
-
-document.getElementById('btnAPUndo').onclick =()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
-document.getElementById('btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
-
-document.getElementById('btnMatUndo').onclick =()=>{ segments.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
-document.getElementById('btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); } };
-
-document.getElementById('btnRender').onclick =()=>{ renderHeatmap(); hideProbe(); };
-document.getElementById('btnExport').onclick =()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
-
-document.getElementById('btnSave').onclick=()=>{
-  const payload={ aps, segments, alpha:+($('#alpha').value||0.6), blurPx:+($('#blurPx').value||16), scale:scale.pxPerMeter };
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='heatmap_project_planning.json'; a.click();
-  URL.revokeObjectURL(a.href);
-};
-document.getElementById('loadJson').addEventListener('change', e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try{
-      const obj=JSON.parse(reader.result);
-      aps=obj.aps||[]; segments=obj.segments||[];
-      $('#alpha').value=obj.alpha??0.6; $('#blurPx').value=obj.blurPx??16;
-      scale.pxPerMeter=obj.scale||null;
-      $('#scaleLabel').textContent=scale.pxPerMeter?`${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
-      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
-      refreshAPList(); refreshMatList();
-    }catch(err){ alert('Invalid project JSON'); }
-  };
-  reader.readAsText(f);
-});
-
-/* ===== image input handlers (เดิมไม่ได้ใส่) ===== */
-document.getElementById('fileInput').addEventListener('change', e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const img=new Image();
-  img.onload=()=>{ floorImg=img; fitCanvasToImage(img); drawBase(); drawPermanent(); };
-  img.src=URL.createObjectURL(f);
-});
-document.getElementById('btnClear').onclick=()=>{ floorImg=null; drawBase(); drawPermanent(); };
-
-/* ===== drag on canvas (draw temp on overlay) ===== */
-function getCanvasPos(e){
-  const rect=canvas.getBoundingClientRect();
-  const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
-  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY, rect };
-}
-function startDrag(x,y){ dragging=true; dragStart={x,y}; clearOverlay(); }
-function updateDrag(x,y){
-  if(!dragging||!dragStart) return;
-  clearOverlay();
-  const label=(mode==='scale')
-    ? `${dist(dragStart,{x,y}).toFixed(1)} px`
-    : `${MATERIALS[$('#matType').value]?.name||'วัสดุ'} · ${($('#matAtt').value||'0')} dB`;
-  const color=(mode==='scale')?'#6ae3ff':'#ffd36a';
-  drawArrow(dragStart,{x,y},{color, width:3.5, head:12, dash:[10,6], label});
-}
-function endDrag(x,y){
-  if(!dragging||!dragStart) return;
-  clearOverlay();
-  const a={...dragStart}, b={x,y};
-  if(mode==='scale'){
-    const Lpx=dist(a,b);
-    const real=prompt(`ความยาวจริง (เมตร) ของไม้บรรทัด ${Lpx.toFixed(1)} px = ?`, '5');
-    if(real && +real>0){
-      scale.pxPerMeter=Lpx/(+real);
-      $('#scaleLabel').textContent=`${scale.pxPerMeter.toFixed(1)} px/เมตร`;
-    }
-    mode='idle'; $('#modeBadge').textContent='โหมด: Idle';
-    drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
-  }else if(mode==='mat'){
-    const type=$('#matType').value;
-    const att=parseFloat($('#matAtt').value || (MATERIALS[type]?.att||8));
-    segments.push({a,b,type,att});
-    mode='idle'; $('#modeBadge').textContent='โหมด: Idle';
-    drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
-  }
-  dragging=false; dragStart=null;
-}
-
-/* mouse binding */
-canvas.addEventListener('mousedown', e=>{
-  if(appMode!=='planning') return;
-  const {x,y}=getCanvasPos(e);
-  if(mode==='scale' || mode==='mat') startDrag(x,y);
-});
-canvas.addEventListener('mousemove', e=>{
-  if(appMode!=='planning') return;
-  const {x,y}=getCanvasPos(e);
-  if(mode==='scale' || mode==='mat') updateDrag(x,y);
-});
-canvas.addEventListener('mouseup', e=>{
-  if(appMode!=='planning') return;
-  const {x,y}=getCanvasPos(e);
-  if(mode==='scale' || mode==='mat') endDrag(x,y);
-});
-canvas.addEventListener('mouseleave', ()=>{ if(appMode!=='planning') return; dragging=false; dragStart=null; clearOverlay(); });
-
-/* click for AP / probe */
-canvas.addEventListener('click', e=>{
-  if(appMode!=='planning') return;
-  const {x,y,rect}=getCanvasPos(e);
-  if(mode==='ap'){
-    if(!scale.pxPerMeter){
-      // ตั้งชั่วคราวเพื่อให้วาง/เรนเดอร์ได้เลย
-      scale.pxPerMeter=100; $('#scaleLabel').textContent='100 px/เมตร (อัตโนมัติ)';
-    }
-    const label=$('#apLabel').value.trim()||`AP-${aps.length+1}`;
-    const p0=parseFloat($('#apP0').value||'-40');
-    const band=$('#apBand').value||'5';
-    aps.push({x,y,label,p0,band});
-    drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList();
-  }else if(mode==='idle'){
-    if(!hasRendered) return;
-    renderHeatmap(); showProbeAt(x,y);
-  }
-});
-
-/* keyboard (Planning) — ***ปิดบล็อกให้สมบูรณ์*** */
-document.addEventListener('keydown', e=>{
-  if(appMode!=='planning') return;
-  if(e.key==='s'||e.key==='S'){ mode='scale'; $('#modeBadge').textContent='โหมด: ตั้งสเกล'; hideProbe(); }
-  if(e.key==='a'||e.key==='A'){ mode='ap';    $('#modeBadge').textContent='โหมด: วาง AP (คลิก)'; hideProbe(); }
-  if(e.key==='w'||e.key==='W'){ mode='mat';   $('#modeBadge').textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); }
-  if(e.key==='h'||e.key==='H'){ renderHeatmap(); hideProbe(); }
-  if(e.key==='Escape'){         mode='idle';  $('#modeBadge').textContent='โหมด: Idle'; hideProbe(); }
-});
-
-/* init */
-(function(){
-  applyCanvasCSSSize();
-  setModeApp('planning');
-  makeFixedLegend();
-  drawBase(); drawPermanent();
-})();
-</script>
+<script src="./app.js"></script>
 </body>
 </html>
