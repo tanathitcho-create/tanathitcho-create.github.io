@@ -23,10 +23,11 @@
   .section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
   .label{font-size:13px;color:var(--muted);margin:6px 0 6px}
   .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  input[type="file"],input[type="number"],input[type="text"],select{
+  input[type="file"],input[type="number"],input[type="text"],select,textarea{
     background:var(--card);border:1px solid #2a3156;color:var(--text);
     border-radius:10px;padding:8px 10px;outline:none
   }
+  textarea{width:100%;min-height:54px;resize:vertical}
   input[type="number"]{width:120px}
   input[type="range"]{width:180px}
   button{
@@ -39,12 +40,15 @@
   .legend{display:flex;align-items:center;gap:10px}
   .grad{width:220px;height:12px;border-radius:999px;border:1px solid #2a3156}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .grid-1{display:grid;grid-template-columns:1fr;gap:8px}
   .kbd{font-family:ui-monospace,Menlo,Consolas,monospace;background:#222846;border:1px solid #2a3156;border-radius:6px;padding:2px 6px;color:#b9c3ff;font-size:12px}
   .muted{color:var(--muted)}
   .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#22284a;border:1px solid #2a3156}
   .small{font-size:12px}
   .apRow,.matRow{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#141a34;border:1px solid #2a3156;border-radius:10px;padding:6px 8px}
   .dot{width:10px;height:10px;border-radius:50%}
+  details.spec details{margin-left:10px}
+  details.spec>summary{cursor:pointer;padding:6px 10px;border:1px solid #2a3156;border-radius:8px;background:#1b2141}
   @media (max-width:980px){ .container{grid-template-columns:1fr} }
 
   .stage{position:relative;display:inline-block}
@@ -139,7 +143,71 @@
           <input type="number" id="apN" value="2.2" step="0.1"/>
         </div>
       </div>
-      <div class="row" style="margin-top:8px">
+
+      <!-- Lock n for all APs -->
+      <div class="row" style="margin-top:6px; gap:10px">
+        <label class="chip" style="gap:6px">
+          <input type="checkbox" id="lockN" style="margin-right:6px"/>
+          ล็อก n ทุก AP
+        </label>
+        <input type="number" id="lockNValue" value="2.2" step="0.1" title="ค่า n ที่ใช้กับทุก AP เมื่อเปิดล็อก"/>
+      </div>
+
+      <!-- NEW: AP Specifications form -->
+      <details class="spec" style="margin-top:10px">
+        <summary>🧾 รายละเอียดสเปก AP (ต่อ AP ที่จะวาง)</summary>
+        <div class="grid-1" style="margin-top:8px">
+          <div class="label">รุ่น/ชื่อผลิตภัณฑ์</div>
+          <input type="text" id="apSpec_model" placeholder="เช่น AX1800 Dual-Band Wi-Fi 6 Router"/>
+
+          <div class="label">ปุ่ม (Buttons)</div>
+          <textarea id="apSpec_buttons" placeholder="Reset, WPS/Wi-Fi, Power On/Off, LED On/Off"></textarea>
+
+          <div class="label">แหล่งจ่ายไฟ (External Power Supply)</div>
+          <input type="text" id="apSpec_power" placeholder="12 V ⎓ 1.5 A"/>
+
+          <div class="label">เสาอากาศ (Antenna)</div>
+          <input type="text" id="apSpec_ant" placeholder="4x Fixed High-Performance Antennas"/>
+
+          <div class="label">พอร์ต/อินเทอร์เฟซ (Interface)</div>
+          <textarea id="apSpec_iface" placeholder="1× Gigabit WAN, 4× Gigabit LAN"></textarea>
+
+          <div class="label">มาตรฐาน & ย่านความถี่ (Wireless Standards / Frequency)</div>
+          <textarea id="apSpec_standards" placeholder="Wi-Fi 6 (802.11ax), 5 GHz: ax/ac/n/a, 2.4 GHz: ax/n/b/g; Bands: 2.4 & 5 GHz"></textarea>
+
+          <div class="label">อัตราส่งข้อมูล (Signal Rate)</div>
+          <textarea id="apSpec_rate" placeholder="AX1800 — 5 GHz: 1201 Mbps, 2.4 GHz: 574 Mbps"></textarea>
+
+          <div class="label">ความไวรับสัญญาณ (Reception Sensitivity)</div>
+          <input type="text" id="apSpec_rx" placeholder="(ถ้ามีตัวเลขจากสเปกชีต)"/>
+
+          <div class="label">ฟังก์ชัน/ความปลอดภัยไร้สาย (Wireless Functions)</div>
+          <textarea id="apSpec_functions" placeholder="SPI Firewall, Access Control, IP/MAC Binding, App Layer ..."></textarea>
+
+          <div class="label">ใบรับรอง (Certification)</div>
+          <input type="text" id="apSpec_cert" placeholder="FCC, CE, RoHS"/>
+
+          <div class="label">ความต้องการระบบ (System Requirements)</div>
+          <textarea id="apSpec_sysreq" placeholder="IE 11+, Firefox 12+, Chrome 20+, Safari 4+ ..."></textarea>
+
+          <div class="label">อุณหภูมิ (Operating / Storage Temperature)</div>
+          <input type="text" id="apSpec_temp" placeholder="0–40 °C (ใช้งาน), −40–70 °C (เก็บ)"/>
+
+          <div class="label">ความชื้น (Operating / Storage Humidity)</div>
+          <input type="text" id="apSpec_humi" placeholder="10–90% (ใช้งาน) / 5–90% (เก็บ), non-condensing"/>
+
+          <div class="label">การรับประกัน (Warranty)</div>
+          <input type="text" id="apSpec_warranty" placeholder="Lifetime"/>
+
+          <div class="label">Option / อื่น ๆ</div>
+          <input type="text" id="apSpec_option" placeholder="N/A"/>
+
+          <div class="label">หมายเหตุ (Notes)</div>
+          <textarea id="apSpec_notes" placeholder="บันทึกเพิ่มเติม เช่น จุดติดตั้ง, ความสูง, สายแลน ฯลฯ"></textarea>
+        </div>
+      </details>
+
+      <div class="row" style="margin-top:10px">
         <button id="btnAP">📡 โหมดวาง AP (คลิก)</button>
         <button id="btnAPUndo" class="ghost">↩️ ลบ AP ล่าสุด</button>
         <button id="btnAPClear" class="danger">🗑️ ล้าง AP ทั้งหมด</button>
@@ -265,13 +333,13 @@ pickPlanning.onclick = ()=> setMode('planning');
 pickSurvey.onclick   = ()=> setMode('survey');
 
 /* ===== thresholds & utilities ===== */
-const RSSI_MIN = -80;           // กำหนดปลายล่างสุดของสเกลเทา
-const P_GRAY   = -67;           // จุด "เทา"
-const P_YELLOW = -60;           // จุด "เหลือง"
-const P_GREEN  = -30;           // จุด "เขียว"
+const RSSI_MIN = -80;
+const P_GRAY   = -67;
+const P_YELLOW = -60;
+const P_GREEN  = -30;
 
-const GRAY_BASE  = [128,128,128]; // สีเทาที่ -67
-const GRAY_LIGHT = [220,220,220]; // เทาอ่อนลงไปทาง -80
+const GRAY_BASE  = [128,128,128];
+const GRAY_LIGHT = [220,220,220];
 
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -287,10 +355,59 @@ const mixColor=(c1,c2,t)=>[
 const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
 const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
 let floorImg=null;
-let floorScale=0.75; // แปลนเริ่มต้นที่ 75% ของพื้นที่
+let floorScale=0.75;
 let aps=[]; let segments=[];
 let mode='idle'; let dragging=false; let dragStart=null;
 let scale={pxPerMeter:null}; let hasRendered=false;
+
+/* lock-n state */
+let lockN=false;
+let lockNValue=2.2;
+const lockNEl = document.querySelector('#lockN');
+const lockNValueEl = document.querySelector('#lockNValue');
+
+/* spec form getters */
+function getAPSpecFromForm(){
+  return {
+    model:    $('#apSpec_model').value.trim(),
+    buttons:  $('#apSpec_buttons').value.trim(),
+    power:    $('#apSpec_power').value.trim(),
+    antenna:  $('#apSpec_ant').value.trim(),
+    iface:    $('#apSpec_iface').value.trim(),
+    standards:$('#apSpec_standards').value.trim(),
+    rate:     $('#apSpec_rate').value.trim(),
+    rx:       $('#apSpec_rx').value.trim(),
+    functions:$('#apSpec_functions').value.trim(),
+    cert:     $('#apSpec_cert').value.trim(),
+    sysreq:   $('#apSpec_sysreq').value.trim(),
+    temp:     $('#apSpec_temp').value.trim(),
+    humi:     $('#apSpec_humi').value.trim(),
+    warranty: $('#apSpec_warranty').value.trim(),
+    option:   $('#apSpec_option').value.trim(),
+    notes:    $('#apSpec_notes').value.trim(),
+  };
+}
+function specToPrettyText(spec){
+  const lines=[];
+  const push=(k,v)=>{ if(v) lines.push(`${k}: ${v}`); };
+  push('รุ่น/ชื่อ', spec.model);
+  push('ปุ่ม', spec.buttons);
+  push('แหล่งจ่ายไฟ', spec.power);
+  push('เสาอากาศ', spec.antenna);
+  push('พอร์ต/อินเทอร์เฟซ', spec.iface);
+  push('มาตรฐาน/ย่านความถี่', spec.standards);
+  push('อัตราส่งข้อมูล', spec.rate);
+  push('ความไวรับสัญญาณ', spec.rx);
+  push('ฟังก์ชันไร้สาย/ความปลอดภัย', spec.functions);
+  push('ใบรับรอง', spec.cert);
+  push('ความต้องการระบบ', spec.sysreq);
+  push('อุณหภูมิ', spec.temp);
+  push('ความชื้น', spec.humi);
+  push('การรับประกัน', spec.warranty);
+  push('Option/อื่น ๆ', spec.option);
+  push('หมายเหตุ', spec.notes);
+  return lines.join('\n');
+}
 
 const UI={
   modeBadge:$('#modeBadge'), scaleLabel:$('#scaleLabel'),
@@ -300,6 +417,24 @@ const UI={
   stage:$('#stage'),
   imgScale:$('#imgScale'), imgScaleNum:$('#imgScaleNum')
 };
+
+function syncLockNUI(){
+  if (!lockNEl || !lockNValueEl) return;
+  lockNEl.checked = lockN;
+  lockNValueEl.value = lockNValue;
+  const apNInput = document.querySelector('#apN');
+  if (apNInput) apNInput.disabled = lockN;
+}
+lockNEl?.addEventListener('change', () => {
+  lockN = lockNEl.checked;
+  lockNValue = parseFloat(lockNValueEl.value || '2.2');
+  syncLockNUI();
+  if (hasRendered) renderHeatmap();
+});
+lockNValueEl?.addEventListener('input', () => {
+  lockNValue = parseFloat(lockNValueEl.value || '2.2');
+  if (lockN && hasRendered) renderHeatmap();
+});
 
 /* ===== helpers ===== */
 function getCanvasPos(e){
@@ -367,7 +502,6 @@ function drawBase(){
   hideProbe();
 }
 function drawPermanent(){
-  // materials
   ctx.lineWidth=3;
   segments.forEach(s=>{
     const m=MATERIALS[s.type]||{color:'#fff',name:s.type};
@@ -376,13 +510,14 @@ function drawPermanent(){
     ctx.fillStyle='#e8ecf1'; ctx.font='11px ui-monospace,monospace';
     ctx.fillText(`${m.name} · ${s.att} dB`, mx+6, my-6);
   });
-  // APs
   aps.forEach(a=>{
     ctx.fillStyle='#8fd3ff';
     ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#2a7fff'; ctx.lineWidth=2; ctx.stroke();
     ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
-    ctx.fillText(`${a.label||'AP'} · P0:${a.p0}dBm n:${a.n}`, a.x+10, a.y-8);
+    const nShow = (lockN?lockNValue:a.n);
+    const label = a.spec?.model ? `${a.label||'AP'} (${a.spec.model})` : (a.label||'AP');
+    ctx.fillText(`${label} · P0:${a.p0}dBm n:${nShow}`, a.x+10, a.y-8);
   });
 }
 
@@ -408,67 +543,58 @@ function drawArrow(a,b,opts={}){
 
 /* ===== legend & color ===== */
 function makeFixedLegend(){
-  // วาดเลเจนด์กว้าง 256px: [เทาอ่อน→เทา] (−80→−67), [เทา→เหลือง] (−67→−60), [เหลือง→เขียว] (−60→−30), [เขียวล้วน] (>−30)
   const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
   const c=cvs.getContext('2d');
 
-  const span1 = P_GRAY - RSSI_MIN;   // 13
-  const span2 = P_YELLOW - P_GRAY;   // 7
-  const span3 = P_GREEN - P_YELLOW;  // 30
-  const spanSum = span1 + span2 + span3; // 50
-  const usable = 240;                 // ใช้ 240px สำหรับช่วง 3 ส่วนแรก
-  const s = usable / spanSum;         // อัตราขยายเป็นพิกเซล
+  const span1 = P_GRAY - RSSI_MIN;
+  const span2 = P_YELLOW - P_GRAY;
+  const span3 = P_GREEN - P_YELLOW;
+  const spanSum = span1 + span2 + span3;
+  const usable = 240;
+  const s = usable / spanSum;
 
-  const px1 = Math.round(span1 * s);  // ≈62
-  const px2 = Math.round(span2 * s);  // ≈34
-  const px3 = Math.round(span3 * s);  // ≈144
-  const pxG = 256 - (px1+px2+px3);    // ส่วนที่เหลือใส่เขียวล้วน
+  const px1 = Math.round(span1 * s);
+  const px2 = Math.round(span2 * s);
+  const px3 = Math.round(span3 * s);
+  const pxG = 256 - (px1+px2+px3);
 
   let x = 0;
-  // ช่วง1: -80→-67 : เทาอ่อน → เทา
   for(let i=0;i<px1;i++,x++){
-    const t = i/(px1||1); // 0→1
+    const t = i/(px1||1);
     const col = mixColor(GRAY_LIGHT, GRAY_BASE, t);
     c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
     c.fillRect(x,0,1,1);
   }
-  // ช่วง2: -67→-60 : เทา → เหลือง
   for(let i=0;i<px2;i++,x++){
     const t = i/(px2||1);
     const col = mixColor(GRAY_BASE, [255,255,0], t);
     c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
     c.fillRect(x,0,1,1);
   }
-  // ช่วง3: -60→-30 : เหลือง → เขียว
   for(let i=0;i<px3;i++,x++){
     const t = i/(px3||1);
     const col = mixColor([255,255,0], [0,255,0], t);
     c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
     c.fillRect(x,0,1,1);
   }
-  // ส่วนเกิน: เขียวล้วน (> -30)
   c.fillStyle = `rgb(0,255,0)`;
   c.fillRect(x,0,pxG,1);
 
   g.style.backgroundImage=`url(${cvs.toDataURL()})`;
 }
 function colorFromRSSI(v){
-  // ต่ำกว่า/เท่ากับ -67 dBm: เทา และยิ่งติดลบมากยิ่ง "อ่อนลง" ถึง -80
   if (v <= P_GRAY){
-    const t = clamp((P_GRAY - v) / (P_GRAY - RSSI_MIN), 0, 1); // -67→0, -80→1
+    const t = clamp((P_GRAY - v) / (P_GRAY - RSSI_MIN), 0, 1);
     return mixColor(GRAY_BASE, GRAY_LIGHT, t);
   }
-  // -67 → -60 : เทา → เหลือง
   if (v <= P_YELLOW){
-    const t = (v - P_GRAY) / (P_YELLOW - P_GRAY);              // -67→0, -60→1
+    const t = (v - P_GRAY) / (P_YELLOW - P_GRAY);
     return mixColor(GRAY_BASE, [255,255,0], t);
   }
-  // -60 → -30 : เหลือง → เขียว
   if (v <= P_GREEN){
-    const t = (v - P_YELLOW) / (P_GREEN - P_YELLOW);           // -60→0, -30→1
+    const t = (v - P_YELLOW) / (P_GREEN - P_YELLOW);
     return mixColor([255,255,0], [0,255,0], t);
   }
-  // ดีกว่า -30 dBm: เขียวล้วน
   return [0,255,0];
 }
 const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
@@ -493,14 +619,15 @@ function pathObstacleLoss(pFrom,pTo){
 /* ===== AP model ===== */
 // RSSI(d) = P0 - 10*n*log10(d) - obstacleLoss ; d (m)
 function rssiFromAPs(x,y){
-  if(!aps.length) return RSSI_MIN;           // ไม่มี AP → ให้สีเทาช่วงล่าง
-  if(!scale.pxPerMeter) return RSSI_MIN;     // ยังไม่ตั้งสเกล → ให้สีเทาช่วงล่าง
+  if(!aps.length) return RSSI_MIN;
+  if(!scale.pxPerMeter) return RSSI_MIN;
   const P={x,y}; let sum_mW=0;
   for(const a of aps){
     const d_px=Math.hypot(x-a.x,y-a.y);
     const d_m=Math.max(1e-3,d_px/scale.pxPerMeter);
     const lossObs=pathObstacleLoss(P,a);
-    const rssi=a.p0 - 10*a.n*Math.log10(d_m) - lossObs;
+    const nEff = lockN ? lockNValue : a.n;
+    const rssi=a.p0 - 10*nEff*Math.log10(d_m) - lossObs;
     sum_mW += Math.pow(10, rssi/10);
   }
   return 10*Math.log10(Math.max(1e-15,sum_mW));
@@ -513,7 +640,7 @@ function renderHeatmap(){
 
   const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
   const blurPx=Math.max(0,parseInt($('#blurPx').value||'16',10));
-  makeFixedLegend();  // อัปเดตเลเจนด์ตามสเกลใหม่
+  makeFixedLegend();
   drawBase();
 
   const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
@@ -536,7 +663,10 @@ function showProbeAt(x,y,rect){
   ctx.save(); ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.globalAlpha=.9; ctx.fill();
   ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke(); ctx.restore();
   const rssi=rssiFromAPs(x,y), col=colorFromRSSI(rssi), colStr=rgbStr(col);
-  UI.probeVal.textContent=`${rssi.toFixed(1)} dBm`; UI.probeMeta.textContent=`x=${x|0}, y=${y|0}`; UI.probeSw.style.background=colStr;
+  $('#probeVal').textContent=`${rssi.toFixed(1)} dBm`;
+  $('#probeMeta').textContent=`x=${x|0}, y=${y|0}`;
+  $('#sw').style.background=colStr;
+
   const stageRect=UI.stage.getBoundingClientRect(); const cRect=canvas.getBoundingClientRect();
   const px=(x/canvas.width)*cRect.width + (cRect.left-stageRect.left);
   const py=(y/canvas.height)*cRect.height + (cRect.top-stageRect.top);
@@ -547,19 +677,34 @@ function hideProbe(){ UI.probe.style.display='none'; }
 /* ===== lists ===== */
 function escapeHtml(s){ return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function refreshAPList(){
-  $('#apList').innerHTML='';
+  UI.apList.innerHTML='';
   aps.forEach((a,i)=>{
     const row=document.createElement('div'); row.className='apRow small';
-    row.innerHTML=`<div><strong>${escapeHtml(a.label||'AP')}</strong> · P0:${a.p0} dBm · n:${a.n}
-      <div class="muted">(${a.x|0},${a.y|0})</div></div>
-      <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
-    row.querySelector('button').onclick=e=>{ aps.splice(+e.target.getAttribute('data-i'),1);
-      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
-    $('#apList').appendChild(row);
+    const model = a.spec?.model ? ` (${escapeHtml(a.spec.model)})` : '';
+    row.innerHTML=`<div>
+        <strong>${escapeHtml(a.label||'AP')}${model}</strong> · P0:${a.p0} dBm · n:${lockN?lockNValue:a.n}
+        <div class="muted">(${a.x|0},${a.y|0})</div>
+      </div>
+      <div class="row">
+        <button data-i="${i}" class="ghost" style="padding:4px 8px">ℹ️ สเปก</button>
+        <button data-del="${i}" class="danger" style="padding:4px 8px">ลบ</button>
+      </div>`;
+    const infoBtn = row.querySelector('button.ghost');
+    infoBtn.onclick = e=>{
+      const idx = +e.target.getAttribute('data-i');
+      const spec = aps[idx]?.spec||{};
+      const text = specToPrettyText(spec)||'(ไม่มีสเปกที่บันทึก)';
+      alert(text);
+    };
+    row.querySelector('button[data-del]').onclick=e=>{
+      aps.splice(+e.target.getAttribute('data-del'),1);
+      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList();
+    };
+    UI.apList.appendChild(row);
   });
 }
 function refreshMatList(){
-  $('#matList').innerHTML='';
+  UI.matList.innerHTML='';
   segments.forEach((s,i)=>{
     const m=MATERIALS[s.type]||{name:s.type,color:'#fff'};
     const row=document.createElement('div'); row.className='matRow small';
@@ -569,16 +714,18 @@ function refreshMatList(){
         <div class="muted">A(${s.a.x|0},${s.a.y|0}) → B(${s.b.x|0},${s.b.y|0})</div></div>
       </div>
       <div class="row"><button data-i="${i}" class="danger" style="padding:4px 8px">ลบ</button></div>`;
-    row.querySelector('button').onclick=e=>{ segments.splice(+e.target.getAttribute('data-i'),1);
-      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
-    $('#matList').appendChild(row);
+    row.querySelector('button').onclick=e=>{
+      segments.splice(+e.target.getAttribute('data-i'),1);
+      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
+    };
+    UI.matList.appendChild(row);
   });
 }
 
 /* ===== toolbar ===== */
-$('#btnScale').onclick=()=>{ mode='scale'; $('#modeBadge').textContent='โหมด: ตั้งสเกล'; hideProbe(); };
-$('#btnAP').onclick   =()=>{ mode='ap';    $('#modeBadge').textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
-$('#btnMat').onclick  =()=>{ mode='mat';   $('#modeBadge').textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
+$('#btnScale').onclick=()=>{ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); };
+$('#btnAP').onclick   =()=>{ mode='ap';    UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
+$('#btnMat').onclick  =()=>{ mode='mat';   UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
 
 $('#btnAPUndo').onclick =()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
 $('#btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
@@ -589,9 +736,13 @@ $('#btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้
 $('#btnRender').onclick =()=>{ renderHeatmap(); hideProbe(); };
 $('#btnExport').onclick =()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
 
+/* Save/Load */
 $('#btnSave').onclick=()=>{
-  const payload={ aps, segments, alpha:+($('#alpha').value||0.6), blurPx:+($('#blurPx').value||16),
-                  scale:scale.pxPerMeter, floorScale };
+  const payload={ aps, segments,
+                  alpha:+($('#alpha').value||0.6),
+                  blurPx:+($('#blurPx').value||16),
+                  scale:scale.pxPerMeter, floorScale,
+                  lockN, lockNValue };
   download('heatmap_project_planning.json', JSON.stringify(payload,null,2));
 };
 $('#loadJson').addEventListener('change', e=>{
@@ -600,13 +751,17 @@ $('#loadJson').addEventListener('change', e=>{
   reader.onload=()=>{
     try{
       const obj=JSON.parse(reader.result);
-      aps=obj.aps||[]; segments=obj.segments||[];
+      aps=(obj.aps||[]).map(a=>({ ...a, spec:a.spec||{} })); // ensure spec
+      segments=obj.segments||[];
       $('#alpha').value=obj.alpha??0.6; $('#blurPx').value=obj.blurPx??16;
       scale.pxPerMeter=obj.scale||null;
       floorScale = clamp(obj.floorScale ?? floorScale, 0.2, 1.5);
+      lockN = !!obj.lockN;
+      lockNValue = parseFloat(obj.lockNValue ?? 2.2);
       UI.imgScale.value = Math.round(floorScale*100);
       UI.imgScaleNum.value = Math.round(floorScale*100);
-      $('#scaleLabel').textContent=scale.pxPerMeter?`${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
+      UI.scaleLabel.textContent=scale.pxPerMeter?`${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
+      syncLockNUI();
       drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
       refreshAPList(); refreshMatList();
     }catch(err){ console.error('Invalid project JSON', err); }
@@ -642,15 +797,15 @@ function endDrag(x,y){
     const real=prompt(`ความยาวจริง (เมตร) ของไม้บรรทัด ${Lpx.toFixed(1)} px = ?`, '5');
     if(real && +real>0){
       scale.pxPerMeter=Lpx/(+real);
-      $('#scaleLabel').textContent=`${scale.pxPerMeter.toFixed(1)} px/เมตร`;
+      UI.scaleLabel.textContent=`${scale.pxPerMeter.toFixed(1)} px/เมตร`;
     }
-    mode='idle'; $('#modeBadge').textContent='โหมด: Idle';
+    mode='idle'; UI.modeBadge.textContent='โหมด: Idle';
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
   }else if(mode==='mat'){
     const type=$('#matType').value;
     const att=parseFloat($('#matAtt').value || (MATERIALS[type]?.att||8));
     segments.push({a,b,type,att});
-    mode='idle'; $('#modeBadge').textContent='โหมด: Idle';
+    mode='idle'; UI.modeBadge.textContent='โหมด: Idle';
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
   }
   dragging=false; dragStart=null;
@@ -681,8 +836,10 @@ canvas.addEventListener('click', e=>{
   if(mode==='ap'){
     if(!scale.pxPerMeter) return;
     const label=$('#apLabel').value.trim()||`AP-${aps.length+1}`;
-    const p0=parseFloat($('#apP0').value||'-40'); const n=parseFloat($('#apN').value||'2.2');
-    aps.push({x,y,label,p0,n});
+    const p0=parseFloat($('#apP0').value||'-40');
+    const n  = lockN ? lockNValue : parseFloat($('#apN').value||'2.2');
+    const spec = getAPSpecFromForm();
+    aps.push({x,y,label,p0,n,spec});
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList();
   }else if(mode==='idle'){
     if(!hasRendered) return;
@@ -693,9 +850,9 @@ canvas.addEventListener('click', e=>{
 /* keyboard (Planning) */
 document.addEventListener('keydown', e=>{
   if(appMode!=='planning') return;
-  if(e.key==='s'||e.key==='S'){ mode='scale'; $('#modeBadge').textContent='โหมด: ตั้งสเกล'; hideProbe(); }
-  if(e.key==='a'||e.key==='A'){ mode='ap';    $('#modeBadge').textContent='โหมด: วาง AP (คลิก)'; hideProbe(); }
-  if(e.key==='w'||e.key==='W'){ mode='mat';   $('#modeBadge').textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); }
+  if(e.key==='s'||e.key==='S'){ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); }
+  if(e.key==='a'||e.key==='A'){ mode='ap';    UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); }
+  if(e.key==='w'||e.key==='W'){ mode='mat';   UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); }
   if(e.key==='h'||e.key==='H'){ renderHeatmap(); hideProbe(); }
 });
 
@@ -713,6 +870,7 @@ UI.imgScaleNum.addEventListener('input', e=> setFloorScaleFromInput(e.target.val
 /* init */
 (function init(){
   applyCanvasCSSSize();
+  syncLockNUI();
   drawBase(); drawPermanent();
 })();
 </script>
