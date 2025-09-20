@@ -47,7 +47,6 @@
   .small{font-size:12px}
   .apRow,.matRow{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#141a34;border:1px solid #2a3156;border-radius:10px;padding:6px 8px}
   .dot{width:10px;height:10px;border-radius:50%}
-  details.spec details{margin-left:10px}
   details.spec>summary{cursor:pointer;padding:6px 10px;border:1px solid #2a3156;border-radius:8px;background:#1b2141}
   @media (max-width:980px){ .container{grid-template-columns:1fr} }
 
@@ -61,23 +60,17 @@
   #probe .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid #0006}
   #probe .sub{font-weight:500;color:#9aa4b2;margin-top:2px}
 
-  #modePicker{
-    position:fixed; inset:0; background:linear-gradient(180deg, rgba(5,8,22,.85), rgba(10,14,34,.85));
-    display:flex; align-items:center; justify-content:center; z-index:80;
-  }
-  .pickerBox{
-    background:#141a2e;border:1px solid #2a3156;border-radius:16px;padding:22px;max-width:520px;width:92%;
-    box-shadow:0 18px 60px rgba(0,0,0,.45)
-  }
+  #modePicker{position:fixed; inset:0; background:linear-gradient(180deg, rgba(5,8,22,.85), rgba(10,14,34,.85));
+    display:flex; align-items:center; justify-content:center; z-index:80;}
+  .pickerBox{background:#141a2e;border:1px solid #2a3156;border-radius:16px;padding:22px;max-width:520px;width:92%;
+    box-shadow:0 18px 60px rgba(0,0,0,.45)}
   .pickerTitle{font-size:18px;margin:0 0 12px}
   .pickerRow{display:flex;gap:12px;flex-wrap:wrap}
   .pickBtn{flex:1;min-width:180px;padding:16px;border-radius:14px;border:1px solid #2a3156;background:#1b2141;color:#e8ecf1;cursor:pointer}
   .pickBtn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.35)}
   .pickHint{font-size:12px;color:#9aa4b2;margin-top:10px}
-  .surveyBlank{
-    background:#ffffff;border-radius:12px;border:1px dashed #cccccc; min-height:300px;
-    display:flex;align-items:center;justify-content:center;color:#333;font:600 18px/1.3 ui-sans-serif,system-ui
-  }
+  .surveyBlank{background:#ffffff;border-radius:12px;border:1px dashed #cccccc; min-height:300px;
+    display:flex;align-items:center;justify-content:center;color:#333;font:600 18px/1.3 ui-sans-serif,system-ui}
 </style>
 </head>
 <body>
@@ -102,7 +95,6 @@
 </div>
 
 <div class="container" id="appPlanning" style="display:grid">
-  <!-- Left control panel -->
   <aside class="panel">
     <div class="section">
       <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG)</div>
@@ -129,7 +121,19 @@
 
     <div class="section">
       <div class="label">3) วาง Access Point</div>
-      <div class="grid">
+
+      <!-- Preset selector -->
+      <div class="grid" style="align-items:end">
+        <div>
+          <div class="label">พรีเซ็ต AP</div>
+          <select id="apPreset"></select>
+        </div>
+        <div class="row">
+          <button id="btnApplyPreset">เติมจากพรีเซ็ต</button>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:8px">
         <div>
           <div class="label">ชื่อ/SSID</div>
           <input type="text" id="apLabel" placeholder="เช่น AP-1"/>
@@ -144,7 +148,6 @@
         </div>
       </div>
 
-      <!-- Lock n for all APs -->
       <div class="row" style="margin-top:6px; gap:10px">
         <label class="chip" style="gap:6px">
           <input type="checkbox" id="lockN" style="margin-right:6px"/>
@@ -153,7 +156,7 @@
         <input type="number" id="lockNValue" value="2.2" step="0.1" title="ค่า n ที่ใช้กับทุก AP เมื่อเปิดล็อก"/>
       </div>
 
-      <!-- NEW: AP Specifications form -->
+      <!-- AP spec form -->
       <details class="spec" style="margin-top:10px">
         <summary>🧾 รายละเอียดสเปก AP (ต่อ AP ที่จะวาง)</summary>
         <div class="grid-1" style="margin-top:8px">
@@ -163,7 +166,7 @@
           <div class="label">ปุ่ม (Buttons)</div>
           <textarea id="apSpec_buttons" placeholder="Reset, WPS/Wi-Fi, Power On/Off, LED On/Off"></textarea>
 
-          <div class="label">แหล่งจ่ายไฟ (External Power Supply)</div>
+          <div class="label">แหล่งจ่ายไฟ (Power)</div>
           <input type="text" id="apSpec_power" placeholder="12 V ⎓ 1.5 A"/>
 
           <div class="label">เสาอากาศ (Antenna)</div>
@@ -172,38 +175,29 @@
           <div class="label">พอร์ต/อินเทอร์เฟซ (Interface)</div>
           <textarea id="apSpec_iface" placeholder="1× Gigabit WAN, 4× Gigabit LAN"></textarea>
 
-          <div class="label">มาตรฐาน & ย่านความถี่ (Wireless Standards / Frequency)</div>
-          <textarea id="apSpec_standards" placeholder="Wi-Fi 6 (802.11ax), 5 GHz: ax/ac/n/a, 2.4 GHz: ax/n/b/g; Bands: 2.4 & 5 GHz"></textarea>
+          <div class="label">มาตรฐาน/ย่านความถี่ (Standards/Frequency)</div>
+          <textarea id="apSpec_standards" placeholder="802.11ax/ac/n/a (5G), 802.11ax/n/b/g (2.4G); Bands: 2.4 & 5 GHz"></textarea>
 
           <div class="label">อัตราส่งข้อมูล (Signal Rate)</div>
-          <textarea id="apSpec_rate" placeholder="AX1800 — 5 GHz: 1201 Mbps, 2.4 GHz: 574 Mbps"></textarea>
+          <textarea id="apSpec_rate" placeholder="AX1800 — 5G: 1201 Mbps; 2.4G: 574 Mbps"></textarea>
 
-          <div class="label">ความไวรับสัญญาณ (Reception Sensitivity)</div>
-          <input type="text" id="apSpec_rx" placeholder="(ถ้ามีตัวเลขจากสเปกชีต)"/>
+          <div class="label">EIRP / TX / RX Sensitivity</div>
+          <textarea id="apSpec_rf" placeholder="ใส่ EIRP ต่อแบนด์ / RX sensitivity ถ้ามี"></textarea>
 
-          <div class="label">ฟังก์ชัน/ความปลอดภัยไร้สาย (Wireless Functions)</div>
-          <textarea id="apSpec_functions" placeholder="SPI Firewall, Access Control, IP/MAC Binding, App Layer ..."></textarea>
+          <div class="label">ฟังก์ชัน/ความปลอดภัยไร้สาย</div>
+          <textarea id="apSpec_functions" placeholder="SPI FW, Access Control, IP/MAC Binding, App Layer ..."></textarea>
 
-          <div class="label">ใบรับรอง (Certification)</div>
+          <div class="label">ใบรับรอง (Cert.)</div>
           <input type="text" id="apSpec_cert" placeholder="FCC, CE, RoHS"/>
 
           <div class="label">ความต้องการระบบ (System Requirements)</div>
           <textarea id="apSpec_sysreq" placeholder="IE 11+, Firefox 12+, Chrome 20+, Safari 4+ ..."></textarea>
 
-          <div class="label">อุณหภูมิ (Operating / Storage Temperature)</div>
-          <input type="text" id="apSpec_temp" placeholder="0–40 °C (ใช้งาน), −40–70 °C (เก็บ)"/>
+          <div class="label">อุณหภูมิ/ความชื้น (Operating/Storage)</div>
+          <textarea id="apSpec_env" placeholder="0–40°C / −40–70°C • RH 10–90% / 5–90% (non-cond.)"></textarea>
 
-          <div class="label">ความชื้น (Operating / Storage Humidity)</div>
-          <input type="text" id="apSpec_humi" placeholder="10–90% (ใช้งาน) / 5–90% (เก็บ), non-condensing"/>
-
-          <div class="label">การรับประกัน (Warranty)</div>
-          <input type="text" id="apSpec_warranty" placeholder="Lifetime"/>
-
-          <div class="label">Option / อื่น ๆ</div>
-          <input type="text" id="apSpec_option" placeholder="N/A"/>
-
-          <div class="label">หมายเหตุ (Notes)</div>
-          <textarea id="apSpec_notes" placeholder="บันทึกเพิ่มเติม เช่น จุดติดตั้ง, ความสูง, สายแลน ฯลฯ"></textarea>
+          <div class="label">การรับประกัน / Option / หมายเหตุ</div>
+          <textarea id="apSpec_notes" placeholder="Warranty, LEDs, โหมดทำงาน, USB share, ฯลฯ"></textarea>
         </div>
       </details>
 
@@ -254,9 +248,7 @@
       </div>
       <div class="legend" style="margin-top:10px">
         <div id="grad" class="grad"></div>
-        <div class="small">
-          สเกลสี: ≤−67 dBm = เทา (อ่อนลงจน −80) • −60 = เหลือง • −30 = เขียว
-        </div>
+        <div class="small">สเกลสี: ≤−67 dBm = เทา (อ่อนลงจน −80) • −60 = เหลือง • −30 = เขียว</div>
       </div>
     </div>
 
@@ -273,7 +265,6 @@
     </div>
   </aside>
 
-  <!-- Right workspace -->
   <main class="panel">
     <div class="row">
       <span class="badge" id="modeBadge">โหมด: Idle</span>
@@ -291,7 +282,7 @@
   </main>
 </div>
 
-<!-- Survey mode (placeholder) -->
+<!-- Survey mode placeholder -->
 <div class="container" id="appSurvey" style="display:none;grid-template-columns:1fr">
   <main class="panel" style="display:flex;flex-direction:column;gap:12px">
     <div class="row">
@@ -303,196 +294,181 @@
 </div>
 
 <script>
-/* ===== app mode switch ===== */
-let appMode = 'planning';
-const modePicker = document.getElementById('modePicker');
-const appPlanning = document.getElementById('appPlanning');
-const appSurvey   = document.getElementById('appSurvey');
-const pillPlanning = document.getElementById('pillPlanning');
-const pillSurvey   = document.getElementById('pillSurvey');
-const pickPlanning = document.getElementById('pickPlanning');
-const pickSurvey   = document.getElementById('pickSurvey');
-function setMode(mode){
-  appMode = mode;
-  if(mode==='planning'){
-    appPlanning.style.display='grid';
-    appSurvey.style.display='none';
-    pillPlanning.classList.add('active');
-    pillSurvey.classList.remove('active');
-  }else{
-    appPlanning.style.display='none';
-    appSurvey.style.display='grid';
-    pillPlanning.classList.remove('active');
-    pillSurvey.classList.add('active');
+/* ===== App presets: AP models (2 ตัวตามที่ให้มา) ===== */
+const AP_PRESETS = {
+  "tplink_ax20": {
+    name: "TP-Link Archer AX20 (AX1800 Wi-Fi 6)",
+    defaults: { p0: -40, n: 2.2 }, // ปรับได้ตามคาลิเบรต
+    spec: {
+      model: "Archer AX20 AX1800 Wi-Fi 6 Router",
+      buttons: "Reset, WPS/Wi-Fi, Power On/Off, LED On/Off",
+      power: "12 V ⎓ 1.5 A",
+      antenna: "4× Fixed High-Performance Antennas (beamforming)",
+      iface: "1× Gigabit WAN, 4× Gigabit LAN",
+      standards: "Wi-Fi 6; IEEE 802.11ax/ac/n/a (5 GHz); IEEE 802.11ax/n/b/g (2.4 GHz); Bands: 2.4 & 5 GHz",
+      rate: "AX1800 — 5 GHz: 1201 Mbps (802.11ax); 2.4 GHz: 574 Mbps (802.11ax)",
+      rf: "Reception Sensitivity: N/A",
+      functions: "SPI Firewall, Access Control, IP & MAC Binding, Application Layer features",
+      cert: "FCC, CE, RoHS",
+      sysreq: "IE 11+, Firefox 12+, Chrome 20+, Safari 4+",
+      env: "Operating: 0–40°C; Storage: −40–70°C; RH 10–90% / 5–90% (non-cond.)",
+      notes: "Warranty: Lifetime; Options: N/A; Dimensions: 260.2×135×38.6 mm"
+    }
+  },
+  "totolink_a3002ru": {
+    name: "TOTOLINK A3002RU (AC1200)",
+    defaults: { p0: -42, n: 2.4 }, // ตัวอย่างค่าเริ่ม (ปรับได้)
+    spec: {
+      model: "TOTOLINK A3002RU",
+      buttons: "RST, WPS, Power On/Off",
+      power: "12 V DC ⎓ 2 A",
+      antenna: "2×5 dBi (2.4G) + 2×5 dBi (5G) Fixed Antennas",
+      iface: "4× 1000M LAN, 1× 1000M WAN, 1× USB 2.0",
+      standards: "IEEE 802.11ac/n/g/b/a; Dual-Band 2.4/5 GHz",
+      rate: "AC1200 — 2.4G: up to 300 Mbps; 5G: up to 867 Mbps",
+      rf: "EIRP: 2.4G < 20 dBm; 5G < 23 dBm\nRX sens.: 2.4G — 11b: ≤-79 dBm; 11g: ≤-68 dBm; 11n: HT20 ≤-65 dBm; HT40 ≤-61 dBm\n5G — 11a: ≤-68 dBm; 11ac: HT20 ≤-65 dBm; HT40 ≤-61 dBm; HT80 ≤-51 dBm",
+      functions: "Wireless ISP/Client, Repeater, Router, Bridge with AP, Client; WEP/WPA/WPA2, Multiple APs, WDS, WPS, Access Control; SPI FW, MAC/IP/Port/URL filtering; QoS, TR-069, DDNS, DoS, SNMP",
+      cert: "—",
+      sysreq: "—",
+      env: "—",
+      notes: "LEDs: Power, CPU, 2.4G, 5G, WAN, 4×LAN, USB; Package: Router, PSU, Ethernet, QIG"
+    }
   }
+};
+
+/* ===== app mode switch ===== */
+let appMode='planning';
+const modePicker=$('#modePicker');
+const appPlanning=$('#appPlanning');
+const appSurvey=$('#appSurvey');
+$('#pillPlanning').onclick=()=>setMode('planning');
+$('#pillSurvey').onclick=()=>setMode('survey');
+$('#pickPlanning').onclick=()=>setMode('planning');
+$('#pickSurvey').onclick=()=>setMode('survey');
+function setMode(mode){
+  appMode=mode;
+  if(mode==='planning'){ appPlanning.style.display='grid'; appSurvey.style.display='none';
+    $('#pillPlanning').classList.add('active'); $('#pillSurvey').classList.remove('active');
+  }else{ appPlanning.style.display='none'; appSurvey.style.display='grid';
+    $('#pillPlanning').classList.remove('active'); $('#pillSurvey').classList.add('active'); }
   modePicker.style.display='none';
 }
-pillPlanning.onclick = ()=> setMode('planning');
-pillSurvey.onclick   = ()=> setMode('survey');
-pickPlanning.onclick = ()=> setMode('planning');
-pickSurvey.onclick   = ()=> setMode('survey');
 
 /* ===== thresholds & utilities ===== */
-const RSSI_MIN = -80;
-const P_GRAY   = -67;
-const P_YELLOW = -60;
-const P_GREEN  = -30;
-
-const GRAY_BASE  = [128,128,128];
-const GRAY_LIGHT = [220,220,220];
-
+const RSSI_MIN=-80, P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
+const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const lerp=(a,b,t)=>a+(b-a)*t;
-const mixColor=(c1,c2,t)=>[
-  Math.round(lerp(c1[0],c2[0],t)),
-  Math.round(lerp(c1[1],c2[1],t)),
-  Math.round(lerp(c1[2],c2[2],t)),
-];
+const mixColor=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
 
 /* ===== canvases & state ===== */
 const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
 const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
-let floorImg=null;
-let floorScale=0.75;
-let aps=[]; let segments=[];
-let mode='idle'; let dragging=false; let dragStart=null;
-let scale={pxPerMeter:null}; let hasRendered=false;
+let floorImg=null, floorScale=0.75;
+let aps=[], segments=[];
+let mode='idle', dragging=false, dragStart=null;
+let scale={pxPerMeter:null}, hasRendered=false;
 
-/* lock-n state */
-let lockN=false;
-let lockNValue=2.2;
-const lockNEl = document.querySelector('#lockN');
-const lockNValueEl = document.querySelector('#lockNValue');
+/* lock n */
+let lockN=false, lockNValue=2.2;
+const lockNEl=$('#lockN'), lockNValueEl=$('#lockNValue');
 
-/* spec form getters */
-function getAPSpecFromForm(){
-  return {
-    model:    $('#apSpec_model').value.trim(),
-    buttons:  $('#apSpec_buttons').value.trim(),
-    power:    $('#apSpec_power').value.trim(),
-    antenna:  $('#apSpec_ant').value.trim(),
-    iface:    $('#apSpec_iface').value.trim(),
-    standards:$('#apSpec_standards').value.trim(),
-    rate:     $('#apSpec_rate').value.trim(),
-    rx:       $('#apSpec_rx').value.trim(),
-    functions:$('#apSpec_functions').value.trim(),
-    cert:     $('#apSpec_cert').value.trim(),
-    sysreq:   $('#apSpec_sysreq').value.trim(),
-    temp:     $('#apSpec_temp').value.trim(),
-    humi:     $('#apSpec_humi').value.trim(),
-    warranty: $('#apSpec_warranty').value.trim(),
-    option:   $('#apSpec_option').value.trim(),
-    notes:    $('#apSpec_notes').value.trim(),
-  };
-}
-function specToPrettyText(spec){
-  const lines=[];
-  const push=(k,v)=>{ if(v) lines.push(`${k}: ${v}`); };
-  push('รุ่น/ชื่อ', spec.model);
-  push('ปุ่ม', spec.buttons);
-  push('แหล่งจ่ายไฟ', spec.power);
-  push('เสาอากาศ', spec.antenna);
-  push('พอร์ต/อินเทอร์เฟซ', spec.iface);
-  push('มาตรฐาน/ย่านความถี่', spec.standards);
-  push('อัตราส่งข้อมูล', spec.rate);
-  push('ความไวรับสัญญาณ', spec.rx);
-  push('ฟังก์ชันไร้สาย/ความปลอดภัย', spec.functions);
-  push('ใบรับรอง', spec.cert);
-  push('ความต้องการระบบ', spec.sysreq);
-  push('อุณหภูมิ', spec.temp);
-  push('ความชื้น', spec.humi);
-  push('การรับประกัน', spec.warranty);
-  push('Option/อื่น ๆ', spec.option);
-  push('หมายเหตุ', spec.notes);
-  return lines.join('\n');
-}
-
+/* UI refs */
 const UI={
   modeBadge:$('#modeBadge'), scaleLabel:$('#scaleLabel'),
   apList:$('#apList'), matList:$('#matList'),
-  legendMin:$('#legendMin'), legendMax:$('#legendMax'),
   probe:$('#probe'), probeVal:$('#probeVal'), probeMeta:$('#probeMeta'), probeSw:$('#sw'),
   stage:$('#stage'),
-  imgScale:$('#imgScale'), imgScaleNum:$('#imgScaleNum')
+  imgScale:$('#imgScale'), imgScaleNum:$('#imgScaleNum'),
+  apPreset:$('#apPreset')
 };
 
-function syncLockNUI(){
-  if (!lockNEl || !lockNValueEl) return;
-  lockNEl.checked = lockN;
-  lockNValueEl.value = lockNValue;
-  const apNInput = document.querySelector('#apN');
-  if (apNInput) apNInput.disabled = lockN;
-}
-lockNEl?.addEventListener('change', () => {
-  lockN = lockNEl.checked;
-  lockNValue = parseFloat(lockNValueEl.value || '2.2');
-  syncLockNUI();
-  if (hasRendered) renderHeatmap();
-});
-lockNValueEl?.addEventListener('input', () => {
-  lockNValue = parseFloat(lockNValueEl.value || '2.2');
-  if (lockN && hasRendered) renderHeatmap();
-});
+/* ===== Preset selector setup ===== */
+(function initApPreset(){
+  // เติมตัวเลือก
+  for(const key of Object.keys(AP_PRESETS)){
+    const o=document.createElement('option');
+    o.value=key; o.textContent=AP_PRESETS[key].name;
+    UI.apPreset.appendChild(o);
+  }
+  // ปุ่มเติมจากพรีเซ็ต
+  $('#btnApplyPreset').addEventListener('click', ()=>{
+    const key=UI.apPreset.value; const p=AP_PRESETS[key]; if(!p) return;
+    // ตั้งชื่อ SSID เบื้องต้นเป็นรุ่น + running number
+    const num = aps.length+1;
+    $('#apLabel').value = `${p.name.split('(')[0].trim()}-${num}`;
+    // ตั้ง P0 / n ค่าเริ่มจากพรีเซ็ต (แก้ไขต่อได้)
+    $('#apP0').value = p.defaults?.p0 ?? -40;
+    $('#apN').value  = p.defaults?.n  ?? 2.2;
+    // เติมฟอร์มสเปก
+    const s=p.spec||{};
+    $('#apSpec_model').value=s.model||'';
+    $('#apSpec_buttons').value=s.buttons||'';
+    $('#apSpec_power').value=s.power||'';
+    $('#apSpec_ant').value=s.antenna||'';
+    $('#apSpec_iface').value=s.iface||'';
+    $('#apSpec_standards').value=s.standards||'';
+    $('#apSpec_rate').value=s.rate||'';
+    $('#apSpec_rf').value=s.rf||'';
+    $('#apSpec_functions').value=s.functions||'';
+    $('#apSpec_cert').value=s.cert||'';
+    $('#apSpec_sysreq').value=s.sysreq||'';
+    $('#apSpec_env').value=s.env||'';
+    $('#apSpec_notes').value=s.notes||'';
+  });
+})();
 
-/* ===== helpers ===== */
-function getCanvasPos(e){
-  const rect=canvas.getBoundingClientRect();
-  const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
-  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY, rect };
+/* ===== helpers for spec ===== */
+function getAPSpecFromForm(){
+  return {
+    model:$('#apSpec_model').value.trim(),
+    buttons:$('#apSpec_buttons').value.trim(),
+    power:$('#apSpec_power').value.trim(),
+    antenna:$('#apSpec_ant').value.trim(),
+    iface:$('#apSpec_iface').value.trim(),
+    standards:$('#apSpec_standards').value.trim(),
+    rate:$('#apSpec_rate').value.trim(),
+    rf:$('#apSpec_rf').value.trim(),
+    functions:$('#apSpec_functions').value.trim(),
+    cert:$('#apSpec_cert').value.trim(),
+    sysreq:$('#apSpec_sysreq').value.trim(),
+    env:$('#apSpec_env').value.trim(),
+    notes:$('#apSpec_notes').value.trim(),
+  };
 }
-function download(filename,data,type="application/json"){
-  const blob=new Blob([data],{type}); const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=filename; a.click();
-  URL.revokeObjectURL(url);
+function specToPrettyText(spec){
+  const lines=[], add=(k,v)=>{ if(v) lines.push(`${k}: ${v}`); };
+  add('รุ่น/ชื่อ',spec.model); add('ปุ่ม',spec.buttons); add('แหล่งจ่ายไฟ',spec.power);
+  add('เสาอากาศ',spec.antenna); add('พอร์ต/อินเทอร์เฟซ',spec.iface);
+  add('มาตรฐาน/ย่านความถี่',spec.standards); add('อัตราส่งข้อมูล',spec.rate);
+  add('EIRP/TX/RX',spec.rf); add('ฟังก์ชัน',spec.functions);
+  add('ใบรับรอง',spec.cert); add('ระบบที่ต้องการ',spec.sysreq);
+  add('สิ่งแวดล้อม',spec.env); add('อื่นๆ',spec.notes);
+  return lines.join('\n');
 }
 
-/* ===== materials ===== */
-const MATERIALS={
-  drywall:{name:'ผนังยิปซัม (Drywall)',color:'#98c1ff',att:3},
-  glass:{name:'กระจก',color:'#7de1ff',att:4},
-  wood:{name:'ไม้',color:'#9ae27b',att:5},
-  brick:{name:'อิฐ/คอนกรีตมวลเบา',color:'#ffb673',att:8},
-  concrete:{name:'คอนกรีตเสริมเหล็ก',color:'#ff8f8f',att:12},
-  metal:{name:'โลหะแผ่น/ประตูเหล็ก',color:'#ffd36a',att:20},
-  human:{name:'ร่างกายคน (เฉลี่ย)',color:'#d6b3ff',att:3}
-};
-const matTypeSel=$('#matType');
-for(const k of Object.keys(MATERIALS)){
-  const o=document.createElement('option'); o.value=k; o.textContent=MATERIALS[k].name; matTypeSel.appendChild(o);
-}
-matTypeSel.value='brick'; $('#matAtt').value=MATERIALS['brick'].att;
-matTypeSel.addEventListener('change',()=>$('#matAtt').value=MATERIALS[matTypeSel.value].att);
-
-/* ===== size sync ===== */
+/* ===== size & draw ===== */
 function applyCanvasCSSSize(){
-  canvas.style.width = canvas.width + 'px';
-  canvas.style.height = canvas.height + 'px';
-  overlay.style.width = canvas.width + 'px';
-  overlay.style.height = canvas.height + 'px';
-  overlay.style.left = '0px';
-  overlay.style.top  = '0px';
+  canvas.style.width=canvas.width+'px'; canvas.style.height=canvas.height+'px';
+  overlay.style.width=canvas.width+'px'; overlay.style.height=canvas.height+'px';
+  overlay.style.left='0px'; overlay.style.top='0px';
 }
 function fitCanvasToImage(img){
   const maxW=1920,maxH=1080;
   const k=Math.min(maxW/img.width, maxH/img.height, 1);
-  const w=Math.round(img.width*k), h=Math.round(img.height*k);
-  canvas.width=w; canvas.height=h;
-  overlay.width=w; overlay.height=h;
-  applyCanvasCSSSize();
+  canvas.width=Math.round(img.width*k); canvas.height=Math.round(img.height*k);
+  overlay.width=canvas.width; overlay.height=canvas.height; applyCanvasCSSSize();
 }
 window.addEventListener('resize', applyCanvasCSSSize);
 
-/* ===== base/permanent ===== */
 function drawBase(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(floorImg){
-    const w = Math.round(canvas.width * floorScale);
-    const h = Math.round(canvas.height * floorScale);
-    const x = Math.round((canvas.width - w)/2);
-    const y = Math.round((canvas.height - h)/2);
-    ctx.drawImage(floorImg, 0,0,floorImg.width,floorImg.height, x,y,w,h);
+    const w=Math.round(canvas.width*floorScale), h=Math.round(canvas.height*floorScale);
+    const x=Math.round((canvas.width-w)/2), y=Math.round((canvas.height-h)/2);
+    ctx.drawImage(floorImg,0,0,floorImg.width,floorImg.height,x,y,w,h);
   }else{
     ctx.fillStyle='#0c1022'; ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.strokeStyle='#1c264a'; ctx.lineWidth=1;
@@ -504,169 +480,132 @@ function drawBase(){
 function drawPermanent(){
   ctx.lineWidth=3;
   segments.forEach(s=>{
-    const m=MATERIALS[s.type]||{color:'#fff',name:s.type};
-    ctx.strokeStyle=m.color; ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
-    const mx=(s.a.x+s.b.x)/2, my=(s.a.y+s.b.y)/2;
-    ctx.fillStyle='#e8ecf1'; ctx.font='11px ui-monospace,monospace';
-    ctx.fillText(`${m.name} · ${s.att} dB`, mx+6, my-6);
+    ctx.strokeStyle=(MATERIALS[s.type]||{color:'#fff'}).color;
+    ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
   });
   aps.forEach(a=>{
-    ctx.fillStyle='#8fd3ff';
-    ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#8fd3ff'; ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#2a7fff'; ctx.lineWidth=2; ctx.stroke();
     ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
-    const nShow = (lockN?lockNValue:a.n);
-    const label = a.spec?.model ? `${a.label||'AP'} (${a.spec.model})` : (a.label||'AP');
-    ctx.fillText(`${label} · P0:${a.p0}dBm n:${nShow}`, a.x+10, a.y-8);
+    const nShow=lockN?lockNValue:a.n;
+    const model=a.spec?.model?` (${a.spec.model})`:'';
+    ctx.fillText(`${a.label||'AP'}${model} · P0:${a.p0} n:${nShow}`, a.x+10, a.y-8);
   });
 }
 
-/* ===== overlay arrows ===== */
+/* overlay helpers */
 function clearOverlay(){ octx.clearRect(0,0,overlay.width,overlay.height); }
 function drawArrow(a,b,opts={}){
   const {color='#6ae3ff',width=3.5,head=12,dash=[10,6],label=''}=opts;
-  octx.save();
-  octx.lineWidth=width; octx.setLineDash(dash); octx.strokeStyle=color;
-  octx.beginPath(); octx.moveTo(a.x,a.y); octx.lineTo(b.x,b.y); octx.stroke();
-  octx.setLineDash([]);
+  octx.save(); octx.lineWidth=width; octx.setLineDash(dash); octx.strokeStyle=color;
+  octx.beginPath(); octx.moveTo(a.x,a.y); octx.lineTo(b.x,b.y); octx.stroke(); octx.setLineDash([]);
   const ang=Math.atan2(b.y-a.y,b.x-a.x);
-  octx.beginPath();
-  octx.moveTo(b.x,b.y);
-  octx.lineTo(b.x-head*Math.cos(ang - Math.PI/7), b.y-head*Math.sin(ang - Math.PI/7));
-  octx.lineTo(b.x-head*Math.cos(ang + Math.PI/7), b.y-head*Math.sin(ang + Math.PI/7));
+  octx.beginPath(); octx.moveTo(b.x,b.y);
+  octx.lineTo(b.x-head*Math.cos(ang-Math.PI/7), b.y-head*Math.sin(ang-Math.PI/7));
+  octx.lineTo(b.x-head*Math.cos(ang+Math.PI/7), b.y-head*Math.sin(ang+Math.PI/7));
   octx.closePath(); octx.fillStyle=color; octx.fill();
   octx.fillStyle='#fff'; octx.strokeStyle='#000'; octx.lineWidth=2;
   [a,b].forEach(p=>{ octx.beginPath(); octx.arc(p.x,p.y,4,0,Math.PI*2); octx.fill(); octx.stroke(); });
-  if(label){ octx.font='12px ui-monospace,monospace'; octx.fillStyle='#cfe6ff'; octx.fillText(label, b.x+10, b.y-8); }
+  if(label){ octx.font='12px ui-monospace,monospace'; octx.fillStyle='#cfe6ff'; octx.fillText(label,b.x+10,b.y-8); }
   octx.restore();
 }
 
-/* ===== legend & color ===== */
+/* legend & color */
 function makeFixedLegend(){
   const g=$('#grad'); const cvs=document.createElement('canvas'); cvs.width=256; cvs.height=1;
   const c=cvs.getContext('2d');
-
-  const span1 = P_GRAY - RSSI_MIN;
-  const span2 = P_YELLOW - P_GRAY;
-  const span3 = P_GREEN - P_YELLOW;
-  const spanSum = span1 + span2 + span3;
-  const usable = 240;
-  const s = usable / spanSum;
-
-  const px1 = Math.round(span1 * s);
-  const px2 = Math.round(span2 * s);
-  const px3 = Math.round(span3 * s);
-  const pxG = 256 - (px1+px2+px3);
-
-  let x = 0;
-  for(let i=0;i<px1;i++,x++){
-    const t = i/(px1||1);
-    const col = mixColor(GRAY_LIGHT, GRAY_BASE, t);
-    c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
-    c.fillRect(x,0,1,1);
-  }
-  for(let i=0;i<px2;i++,x++){
-    const t = i/(px2||1);
-    const col = mixColor(GRAY_BASE, [255,255,0], t);
-    c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
-    c.fillRect(x,0,1,1);
-  }
-  for(let i=0;i<px3;i++,x++){
-    const t = i/(px3||1);
-    const col = mixColor([255,255,0], [0,255,0], t);
-    c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
-    c.fillRect(x,0,1,1);
-  }
-  c.fillStyle = `rgb(0,255,0)`;
-  c.fillRect(x,0,pxG,1);
-
+  const span1=P_GRAY-RSSI_MIN, span2=P_YELLOW-P_GRAY, span3=P_GREEN-P_YELLOW;
+  const usable=240, s=usable/(span1+span2+span3);
+  const px1=Math.round(span1*s), px2=Math.round(span2*s), px3=Math.round(span3*s), pxG=256-(px1+px2+px3);
+  let x=0;
+  for(let i=0;i<px1;i++,x++){ const t=i/(px1||1); const col=mixColor(GRAY_LIGHT,GRAY_BASE,t);
+    c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
+  for(let i=0;i<px2;i++,x++){ const t=i/(px2||1); const col=mixColor(GRAY_BASE,[255,255,0],t);
+    c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
+  for(let i=0;i<px3;i++,x++){ const t=i/(px3||1); const col=mixColor([255,255,0],[0,255,0],t);
+    c.fillStyle=`rgb(${col[0]},${col[1]},${col[2]})`; c.fillRect(x,0,1,1); }
+  c.fillStyle=`rgb(0,255,0)`; c.fillRect(x,0,pxG,1);
   g.style.backgroundImage=`url(${cvs.toDataURL()})`;
 }
 function colorFromRSSI(v){
-  if (v <= P_GRAY){
-    const t = clamp((P_GRAY - v) / (P_GRAY - RSSI_MIN), 0, 1);
-    return mixColor(GRAY_BASE, GRAY_LIGHT, t);
-  }
-  if (v <= P_YELLOW){
-    const t = (v - P_GRAY) / (P_YELLOW - P_GRAY);
-    return mixColor(GRAY_BASE, [255,255,0], t);
-  }
-  if (v <= P_GREEN){
-    const t = (v - P_YELLOW) / (P_GREEN - P_YELLOW);
-    return mixColor([255,255,0], [0,255,0], t);
-  }
+  if (v<=P_GRAY){ const t=clamp((P_GRAY-v)/(P_GRAY-RSSI_MIN),0,1); return mixColor(GRAY_BASE,GRAY_LIGHT,t); }
+  if (v<=P_YELLOW){ const t=(v-P_GRAY)/(P_YELLOW-P_GRAY); return mixColor(GRAY_BASE,[255,255,0],t); }
+  if (v<=P_GREEN){ const t=(v-P_YELLOW)/(P_GREEN-P_YELLOW); return mixColor([255,255,0],[0,255,0],t); }
   return [0,255,0];
 }
 const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
-/* ===== geometry & obstacle loss ===== */
-function orient(a,b,c){ return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x); }
-function onSeg(a,b,c){ return Math.min(a.x,b.x)-1e-6<=c.x && c.x<=Math.max(a.x,b.x)+1e-6 &&
-                             Math.min(a.y,b.y)-1e-6<=c.y && c.y<=Math.max(a.y,b.y)+1e-6; }
+/* geometry & obstacles */
+function orient(a,b,c){ return (b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x); }
+function onSeg(a,b,c){ return Math.min(a.x,b.x)-1e-6<=c.x&&c.x<=Math.max(a.x,b.x)+1e-6 &&
+                             Math.min(a.y,b.y)-1e-6<=c.y&&c.y<=Math.max(a.y,b.y)+1e-6; }
 function segIntersect(p1,p2,q1,q2){
   const o1=orient(p1,p2,q1),o2=orient(p1,p2,q2),o3=orient(q1,q2,p1),o4=orient(q1,q2,p2);
   if((o1*o2<0)&&(o3*o4<0)) return true;
-  if(Math.abs(o1)<1e-8 && onSeg(p1,p2,q1)) return true;
-  if(Math.abs(o2)<1e-8 && onSeg(p1,p2,q2)) return true;
-  if(Math.abs(o3)<1e-8 && onSeg(q1,q2,p1)) return true;
-  if(Math.abs(o4)<1e-8 && onSeg(q1,q2,p2)) return true;
+  if(Math.abs(o1)<1e-8&&onSeg(p1,p2,q1)) return true;
+  if(Math.abs(o2)<1e-8&&onSeg(p1,p2,q2)) return true;
+  if(Math.abs(o3)<1e-8&&onSeg(q1,q2,p1)) return true;
+  if(Math.abs(o4)<1e-8&&onSeg(q1,q2,p2)) return true;
   return false;
 }
-function pathObstacleLoss(pFrom,pTo){
-  let loss=0; for(const s of segments){ if(segIntersect(pFrom,pTo,s.a,s.b)) loss+=(+s.att||0); } return loss;
-}
+function pathObstacleLoss(pFrom,pTo){ let loss=0; for(const s of segments){ if(segIntersect(pFrom,pTo,s.a,s.b)) loss+=(+s.att||0); } return loss; }
 
-/* ===== AP model ===== */
-// RSSI(d) = P0 - 10*n*log10(d) - obstacleLoss ; d (m)
+/* materials */
+const MATERIALS={
+  drywall:{name:'ผนังยิปซัม (Drywall)',color:'#98c1ff',att:3},
+  glass:{name:'กระจก',color:'#7de1ff',att:4},
+  wood:{name:'ไม้',color:'#9ae27b',att:5},
+  brick:{name:'อิฐ/คอนกรีตมวลเบา',color:'#ffb673',att:8},
+  concrete:{name:'คอนกรีตเสริมเหล็ก',color:'#ff8f8f',att:12},
+  metal:{name:'โลหะแผ่น/ประตูเหล็ก',color:'#ffd36a',att:20},
+  human:{name:'ร่างกายคน (เฉลี่ย)',color:'#d6b3ff',att:3}
+};
+const matTypeSel=$('#matType'); for(const k of Object.keys(MATERIALS)){
+  const o=document.createElement('option'); o.value=k; o.textContent=MATERIALS[k].name; matTypeSel.appendChild(o);
+}
+matTypeSel.value='brick'; $('#matAtt').value=MATERIALS['brick'].att;
+matTypeSel.addEventListener('change',()=>$('#matAtt').value=MATERIALS[matTypeSel.value].att);
+
+/* RSSI model */
 function rssiFromAPs(x,y){
-  if(!aps.length) return RSSI_MIN;
-  if(!scale.pxPerMeter) return RSSI_MIN;
+  if(!aps.length||!scale.pxPerMeter) return RSSI_MIN;
   const P={x,y}; let sum_mW=0;
   for(const a of aps){
-    const d_px=Math.hypot(x-a.x,y-a.y);
-    const d_m=Math.max(1e-3,d_px/scale.pxPerMeter);
-    const lossObs=pathObstacleLoss(P,a);
-    const nEff = lockN ? lockNValue : a.n;
-    const rssi=a.p0 - 10*nEff*Math.log10(d_m) - lossObs;
+    const d_px=Math.hypot(x-a.x,y-a.y), d_m=Math.max(1e-3, d_px/scale.pxPerMeter);
+    const loss=pathObstacleLoss(P,a);
+    const nEff=lockN?lockNValue:a.n;
+    const rssi=a.p0 - 10*nEff*Math.log10(d_m) - loss;
     sum_mW += Math.pow(10, rssi/10);
   }
   return 10*Math.log10(Math.max(1e-15,sum_mW));
 }
 
-/* ===== heatmap render ===== */
+/* render */
 function renderHeatmap(){
-  if(!floorImg) return;
-  if(aps.length===0) return;
-
+  if(!floorImg||aps.length===0) return;
   const alpha=clamp(parseFloat($('#alpha').value||'0.6'),0,1);
   const blurPx=Math.max(0,parseInt($('#blurPx').value||'16',10));
-  makeFixedLegend();
-  drawBase();
-
+  makeFixedLegend(); drawBase();
   const heat=document.createElement('canvas'); heat.width=canvas.width; heat.height=canvas.height;
   const hctx=heat.getContext('2d',{willReadFrequently:true});
-  let img=hctx.createImageData(heat.width,heat.height), arr=img.data;
+  const img=hctx.createImageData(heat.width,heat.height), arr=img.data;
   for(let y=0;y<heat.height;y++){
     for(let x=0;x<heat.width;x++){
-      const rssi=rssiFromAPs(x,y); const [r,g,b]=colorFromRSSI(rssi);
+      const [r,g,b]=colorFromRSSI(rssiFromAPs(x,y));
       const i=(y*heat.width+x)*4; arr[i]=r; arr[i+1]=g; arr[i+2]=b; arr[i+3]=255;
     }
   }
   hctx.putImageData(img,0,0);
-  ctx.save(); ctx.globalAlpha=alpha; if(blurPx>0) ctx.filter=`blur(${blurPx}px)`;
-  ctx.drawImage(heat,0,0); ctx.filter='none'; ctx.restore();
+  ctx.save(); ctx.globalAlpha=alpha; if(blurPx>0) ctx.filter=`blur(${blurPx}px)`; ctx.drawImage(heat,0,0); ctx.filter='none'; ctx.restore();
   drawPermanent(); hasRendered=true;
 }
 
-/* ===== probe ===== */
+/* probe */
 function showProbeAt(x,y,rect){
   ctx.save(); ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.globalAlpha=.9; ctx.fill();
   ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke(); ctx.restore();
-  const rssi=rssiFromAPs(x,y), col=colorFromRSSI(rssi), colStr=rgbStr(col);
-  $('#probeVal').textContent=`${rssi.toFixed(1)} dBm`;
-  $('#probeMeta').textContent=`x=${x|0}, y=${y|0}`;
-  $('#sw').style.background=colStr;
-
+  const rssi=rssiFromAPs(x,y), col=colorFromRSSI(rssi);
+  UI.probeVal.textContent=`${rssi.toFixed(1)} dBm`; UI.probeMeta.textContent=`x=${x|0}, y=${y|0}`; UI.probeSw.style.background=rgbStr(col);
   const stageRect=UI.stage.getBoundingClientRect(); const cRect=canvas.getBoundingClientRect();
   const px=(x/canvas.width)*cRect.width + (cRect.left-stageRect.left);
   const py=(y/canvas.height)*cRect.height + (cRect.top-stageRect.top);
@@ -674,13 +613,13 @@ function showProbeAt(x,y,rect){
 }
 function hideProbe(){ UI.probe.style.display='none'; }
 
-/* ===== lists ===== */
+/* lists */
 function escapeHtml(s){ return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function refreshAPList(){
   UI.apList.innerHTML='';
   aps.forEach((a,i)=>{
     const row=document.createElement('div'); row.className='apRow small';
-    const model = a.spec?.model ? ` (${escapeHtml(a.spec.model)})` : '';
+    const model=a.spec?.model?` (${escapeHtml(a.spec.model)})`:'';
     row.innerHTML=`<div>
         <strong>${escapeHtml(a.label||'AP')}${model}</strong> · P0:${a.p0} dBm · n:${lockN?lockNValue:a.n}
         <div class="muted">(${a.x|0},${a.y|0})</div>
@@ -689,12 +628,9 @@ function refreshAPList(){
         <button data-i="${i}" class="ghost" style="padding:4px 8px">ℹ️ สเปก</button>
         <button data-del="${i}" class="danger" style="padding:4px 8px">ลบ</button>
       </div>`;
-    const infoBtn = row.querySelector('button.ghost');
-    infoBtn.onclick = e=>{
-      const idx = +e.target.getAttribute('data-i');
-      const spec = aps[idx]?.spec||{};
-      const text = specToPrettyText(spec)||'(ไม่มีสเปกที่บันทึก)';
-      alert(text);
+    row.querySelector('button.ghost').onclick=e=>{
+      const spec=aps[+e.target.getAttribute('data-i')]?.spec||{};
+      alert(specToPrettyText(spec)||'(ไม่มีสเปกที่บันทึก)');
     };
     row.querySelector('button[data-del]').onclick=e=>{
       aps.splice(+e.target.getAttribute('data-del'),1);
@@ -722,54 +658,47 @@ function refreshMatList(){
   });
 }
 
-/* ===== toolbar ===== */
+/* toolbar */
 $('#btnScale').onclick=()=>{ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); };
-$('#btnAP').onclick   =()=>{ mode='ap';    UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
-$('#btnMat').onclick  =()=>{ mode='mat';   UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
+$('#btnAP').onclick=()=>{ mode='ap'; UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; hideProbe(); };
+$('#btnMat').onclick=()=>{ mode='mat'; UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; hideProbe(); };
 
-$('#btnAPUndo').onclick =()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
+$('#btnAPUndo').onclick=()=>{ aps.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); };
 $('#btnAPClear').onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ aps=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); } };
 
-$('#btnMatUndo').onclick =()=>{ segments.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
+$('#btnMatUndo').onclick=()=>{ segments.pop(); drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); };
 $('#btnMatClear').onclick=()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ segments=[]; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList(); } };
 
-$('#btnRender').onclick =()=>{ renderHeatmap(); hideProbe(); };
-$('#btnExport').onclick =()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
+$('#btnRender').onclick=()=>{ renderHeatmap(); hideProbe(); };
+$('#btnExport').onclick=()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=canvas.toDataURL('image/png'); a.click(); };
 
 /* Save/Load */
 $('#btnSave').onclick=()=>{
   const payload={ aps, segments,
-                  alpha:+($('#alpha').value||0.6),
-                  blurPx:+($('#blurPx').value||16),
-                  scale:scale.pxPerMeter, floorScale,
-                  lockN, lockNValue };
-  download('heatmap_project_planning.json', JSON.stringify(payload,null,2));
+    alpha:+($('#alpha').value||0.6), blurPx:+($('#blurPx').value||16),
+    scale:scale.pxPerMeter, floorScale, lockN, lockNValue };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='heatmap_project_planning.json'; a.click(); URL.revokeObjectURL(url);
 };
 $('#loadJson').addEventListener('change', e=>{
   const f=e.target.files[0]; if(!f) return;
   const reader=new FileReader();
-  reader.onload=()=>{
-    try{
+  reader.onload=()=>{ try{
       const obj=JSON.parse(reader.result);
-      aps=(obj.aps||[]).map(a=>({ ...a, spec:a.spec||{} })); // ensure spec
+      aps=(obj.aps||[]).map(a=>({ ...a, spec:a.spec||{} }));
       segments=obj.segments||[];
       $('#alpha').value=obj.alpha??0.6; $('#blurPx').value=obj.blurPx??16;
-      scale.pxPerMeter=obj.scale||null;
-      floorScale = clamp(obj.floorScale ?? floorScale, 0.2, 1.5);
-      lockN = !!obj.lockN;
-      lockNValue = parseFloat(obj.lockNValue ?? 2.2);
-      UI.imgScale.value = Math.round(floorScale*100);
-      UI.imgScaleNum.value = Math.round(floorScale*100);
+      scale.pxPerMeter=obj.scale||null; floorScale=clamp(obj.floorScale ?? floorScale,0.2,1.5);
+      lockN=!!obj.lockN; lockNValue=parseFloat(obj.lockNValue ?? 2.2); syncLockNUI();
+      UI.imgScale.value=Math.round(floorScale*100); UI.imgScaleNum.value=Math.round(floorScale*100);
       UI.scaleLabel.textContent=scale.pxPerMeter?`${(scale.pxPerMeter).toFixed(1)} px/เมตร`:'ยังไม่ตั้ง';
-      syncLockNUI();
-      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
-      refreshAPList(); refreshMatList();
-    }catch(err){ console.error('Invalid project JSON', err); }
-  };
+      drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList(); refreshMatList();
+    }catch(err){ console.error('Invalid project JSON', err); } };
   reader.readAsText(f);
 });
 
-/* ===== image I/O ===== */
+/* image I/O */
 $('#fileInput').addEventListener('change', e=>{
   const f=e.target.files[0]; if(!f) return;
   const img=new Image(); img.onload=()=>{ floorImg=img; fitCanvasToImage(img); drawBase(); drawPermanent(); };
@@ -777,59 +706,38 @@ $('#fileInput').addEventListener('change', e=>{
 });
 $('#btnClear').onclick=()=>{ floorImg=null; drawBase(); drawPermanent(); };
 
-/* ===== drag on canvas ===== */
+/* drag ops */
 function startDrag(x,y){ dragging=true; dragStart={x,y}; clearOverlay(); }
 function updateDrag(x,y){
-  if(!dragging||!dragStart) return;
-  clearOverlay();
-  const label=(mode==='scale')
-    ? `${dist(dragStart,{x,y}).toFixed(1)} px`
-    : `${MATERIALS[$('#matType').value]?.name||'วัสดุ'} · ${($('#matAtt').value||'0')} dB`;
-  const color=(mode==='scale')?'#6ae3ff':'#ffd36a';
-  drawArrow(dragStart,{x,y},{color, width:3.5, head:12, dash:[10,6], label});
+  if(!dragging||!dragStart) return; clearOverlay();
+  const label=(mode==='scale')?`${dist(dragStart,{x,y}).toFixed(1)} px`:`${MATERIALS[$('#matType').value]?.name||'วัสดุ'} · ${($('#matAtt').value||'0')} dB`;
+  drawArrow(dragStart,{x,y},{color:(mode==='scale')?'#6ae3ff':'#ffd36a',label});
 }
 function endDrag(x,y){
-  if(!dragging||!dragStart) return;
-  clearOverlay();
+  if(!dragging||!dragStart) return; clearOverlay();
   const a={...dragStart}, b={x,y};
   if(mode==='scale'){
-    const Lpx=dist(a,b);
-    const real=prompt(`ความยาวจริง (เมตร) ของไม้บรรทัด ${Lpx.toFixed(1)} px = ?`, '5');
-    if(real && +real>0){
-      scale.pxPerMeter=Lpx/(+real);
-      UI.scaleLabel.textContent=`${scale.pxPerMeter.toFixed(1)} px/เมตร`;
-    }
-    mode='idle'; UI.modeBadge.textContent='โหมด: Idle';
-    drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
+    const Lpx=dist(a,b), real=prompt(`ความยาวจริง (เมตร) ของไม้บรรทัด ${Lpx.toFixed(1)} px = ?`,'5');
+    if(real && +real>0){ scale.pxPerMeter=Lpx/(+real); UI.scaleLabel.textContent=`${scale.pxPerMeter.toFixed(1)} px/เมตร`; }
+    mode='idle'; UI.modeBadge.textContent='โหมด: Idle'; drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
   }else if(mode==='mat'){
-    const type=$('#matType').value;
-    const att=parseFloat($('#matAtt').value || (MATERIALS[type]?.att||8));
-    segments.push({a,b,type,att});
-    mode='idle'; UI.modeBadge.textContent='โหมด: Idle';
+    const type=$('#matType').value, att=parseFloat($('#matAtt').value || (MATERIALS[type]?.att||8));
+    segments.push({a,b,type,att}); mode='idle'; UI.modeBadge.textContent='โหมด: Idle';
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshMatList();
   }
   dragging=false; dragStart=null;
 }
-
-/* mouse binding */
-canvas.addEventListener('mousedown', e=>{
-  if(appMode!=='planning') return;
-  const {x,y}=getCanvasPos(e);
-  if(mode==='scale' || mode==='mat') startDrag(x,y);
-});
-canvas.addEventListener('mousemove', e=>{
-  if(appMode!=='planning') return;
-  const {x,y}=getCanvasPos(e);
-  if(mode==='scale' || mode==='mat') updateDrag(x,y);
-});
-canvas.addEventListener('mouseup', e=>{
-  if(appMode!=='planning') return;
-  const {x,y}=getCanvasPos(e);
-  if(mode==='scale' || mode==='mat') endDrag(x,y);
-});
+canvas.addEventListener('mousedown', e=>{ if(appMode!=='planning') return; const {x,y}=getCanvasPos(e); if(mode==='scale'||mode==='mat') startDrag(x,y); });
+canvas.addEventListener('mousemove', e=>{ if(appMode!=='planning') return; const {x,y}=getCanvasPos(e); if(mode==='scale'||mode==='mat') updateDrag(x,y); });
+canvas.addEventListener('mouseup', e=>{ if(appMode!=='planning') return; const {x,y}=getCanvasPos(e); if(mode==='scale'||mode==='mat') endDrag(x,y); });
 canvas.addEventListener('mouseleave', ()=>{ if(appMode!=='planning') return; dragging=false; dragStart=null; clearOverlay(); });
 
 /* click for AP / probe */
+function getCanvasPos(e){
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
+  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY, rect };
+}
 canvas.addEventListener('click', e=>{
   if(appMode!=='planning') return;
   const {x,y,rect}=getCanvasPos(e);
@@ -837,17 +745,14 @@ canvas.addEventListener('click', e=>{
     if(!scale.pxPerMeter) return;
     const label=$('#apLabel').value.trim()||`AP-${aps.length+1}`;
     const p0=parseFloat($('#apP0').value||'-40');
-    const n  = lockN ? lockNValue : parseFloat($('#apN').value||'2.2');
-    const spec = getAPSpecFromForm();
+    const n=lockN?lockNValue:parseFloat($('#apN').value||'2.2');
+    const spec=getAPSpecFromForm();
     aps.push({x,y,label,p0,n,spec});
     drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent(); refreshAPList();
-  }else if(mode==='idle'){
-    if(!hasRendered) return;
-    renderHeatmap(); showProbeAt(x,y,rect);
-  }
+  }else if(mode==='idle'){ if(!hasRendered) return; renderHeatmap(); showProbeAt(x,y,rect); }
 });
 
-/* keyboard (Planning) */
+/* keyboard */
 document.addEventListener('keydown', e=>{
   if(appMode!=='planning') return;
   if(e.key==='s'||e.key==='S'){ mode='scale'; UI.modeBadge.textContent='โหมด: ตั้งสเกล'; hideProbe(); }
@@ -856,23 +761,28 @@ document.addEventListener('keydown', e=>{
   if(e.key==='h'||e.key==='H'){ renderHeatmap(); hideProbe(); }
 });
 
+/* lockN sync */
+function syncLockNUI(){
+  if(!lockNEl||!lockNValueEl) return;
+  lockNEl.checked=lockN; lockNValueEl.value=lockNValue;
+  const apNInput=$('#apN'); if(apNInput) apNInput.disabled=lockN;
+}
+lockNEl?.addEventListener('change', ()=>{ lockN=lockNEl.checked; lockNValue=parseFloat(lockNValueEl.value||'2.2'); syncLockNUI(); if(hasRendered) renderHeatmap(); });
+lockNValueEl?.addEventListener('input', ()=>{ lockNValue=parseFloat(lockNValueEl.value||'2.2'); if(lockN&&hasRendered) renderHeatmap(); });
+
 /* floor scale controls */
 function setFloorScaleFromInput(v){
-  const pct = clamp(parseInt(v,10)||75, 20, 150);
-  UI.imgScale.value = pct;
-  UI.imgScaleNum.value = pct;
-  floorScale = pct/100;
+  const pct=clamp(parseInt(v,10)||75,20,150);
+  UI.imgScale.value=pct; UI.imgScaleNum.value=pct; floorScale=pct/100;
   drawBase(); if(hasRendered) renderHeatmap(); else drawPermanent();
 }
 UI.imgScale.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 UI.imgScaleNum.addEventListener('input', e=> setFloorScaleFromInput(e.target.value));
 
+/* materials UI already set above */
+
 /* init */
-(function init(){
-  applyCanvasCSSSize();
-  syncLockNUI();
-  drawBase(); drawPermanent();
-})();
+(function init(){ applyCanvasCSSSize(); syncLockNUI(); drawBase(); drawPermanent(); })();
 </script>
 </body>
 </html>
