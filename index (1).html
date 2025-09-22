@@ -42,12 +42,10 @@
   .dot{width:10px;height:10px;border-radius:50%}
   @media (max-width:980px){ .container{grid-template-columns:1fr} }
 
-  /* canvases stack */
   .stage{position:relative;display:inline-block;overflow:hidden;border-radius:12px;border:1px solid #242a49}
   #canvas,#overlay{display:block}
   #overlay{position:absolute; left:0; top:0; pointer-events:none; z-index:3;}
 
-  /* probe tooltip */
   #probe{position:absolute;display:none;transform:translate(10px,-10px);
          background:#0e1329;border:1px solid #2a3156;border-radius:10px;padding:6px 8px;
          color:#e8ecf1;font:600 13px ui-monospace,monospace;pointer-events:none;z-index:4;
@@ -55,7 +53,6 @@
   #probe .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid #0006}
   #probe .sub{font-weight:500;color:#9aa4b2;margin-top:2px}
 
-  /* Survey placeholder */
   .surveyBlank{background:#ffffff;border-radius:12px;border:1px dashed #cccccc; min-height:300px;
     display:flex;align-items:center;justify-content:center;color:#333;font:600 18px/1.3 ui-sans-serif,system-ui}
   .zoombar{display:flex;gap:6px}
@@ -184,7 +181,7 @@
       </div>
     </div>
 
-    <!-- ===== 8) Fractal (หลังจากสร้าง Heatmap) ===== -->
+    <!-- 8) Fractal -->
     <div class="section">
       <div class="label">8) Fractal (หลังจากสร้าง Heatmap แล้ว)</div>
       <div class="row" style="margin-top:8px">
@@ -235,8 +232,13 @@
   </main>
 </div>
 
-<!-- สคริปต์หลัก + ฟีเจอร์ Fractal -->
+<!-- สคริปต์หลัก -->
 <script src="./app.js"></script>
-<script src="./fd.js"></script>
+
+<!-- นำเข้า fd.js แบบ ES module แล้วโยนเป็น window.fd -->
+<script type="module">
+  import * as fd from './fd.js';
+  window.fd = fd;
+</script>
 </body>
 </html>
