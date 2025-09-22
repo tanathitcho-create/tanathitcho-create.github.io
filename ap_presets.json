@@ -70,6 +70,44 @@
     "speeds": { "5": "867 Mbps (ac)", "2.4": "400 Mbps (n)" },
     "notes": "AC1200 dual-band; SPI Firewall; Tether App; IPv6"
   },
+"Aruba AP-303 (JZ320A) (RW) Unified AP": {
+  bands: ["2.4","5"],
+
+  // ค่าประมาณ P0 @ 1 m (dBm) — ปรับตามที่คุณวัดจริงได้
+  p0: { "2.4": -42, "5": -40 },
+
+  // อ้างอิงกำลังส่งรวม (ไม่ได้ใช้ตรงๆ ในโมเดล แต่เก็บไว้เพื่ออนาคต)
+  eirp_dbm: { "2.4": 20, "5": 23 },
+
+  // กำไรเสา (จากสเปค)
+  antenna_gain_dbi: { "2.4": 3.3, "5": 5.9 },
+
+  // ข้อมูลเสริม (ไม่บังคับ ใช้แสดง/อ้างอิง)
+  meta: {
+    sku: "JZ320A",
+    radios: "Dual Radio 802.11ac, 2x2 MU-MIMO",
+    max_rate: { "2.4": "300 Mbps (HT40 2SS)", "5": "867 Mbps (VHT80 2SS)" },
+    bssids_per_radio: 16,
+    ethernet: "1x 10/100/1000BASE-T (RJ-45)",
+    ble: true,
+    power_max_w: 10.1,
+    poe_note: "ถ้าไม่ใช้ PoE ต้องมี Adapter JX990A หรือ Injector R6P68A",
+    mount_kit: "ไม่แถมในชุด: AP-220-MNT-W1 (ดำ) หรือ AP-220-MNT-W1W (ขาว)",
+    key_features: [
+      "Controller-based / Instant (Standalone) mode",
+      "QoS for UC apps, ACC (Advanced Cellular Coexistence)",
+      "RF Management, Air monitor (WIDS/Rogue)",
+      "Remote AP (RAP), AppRF (DPI)"
+    ],
+    package: [
+      "Aruba AP-303 (RW) Unified AP (JZ320A)",
+      "Quick Start Guide",
+      "Ethernet Cable"
+    ]
+  },
+
+  note: "2x2 MU-MIMO; 867 Mbps (5 GHz) + 300 Mbps (2.4 GHz); antenna gain 3.3/5.9 dBi"
+},
 
   "TP-Link Archer C80 AC1900": {
     "vendor": "TP-Link",
