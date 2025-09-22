@@ -1,4 +1,4 @@
-// fd.js — Fractal Dimension utilities (browser, no bundler)
+// fd.js — Fractal Dimension utilities (ES module)
 
 // ===== Linear regression (log–log) =====
 function linreg(X, Y) {
@@ -17,10 +17,9 @@ function linreg(X, Y) {
 }
 
 // ===== Box-counting FD บนชุดจุด (เช่น จุดจากคอนทัวร์) =====
-export function fractalDimensionBoxCounting(points, width, height, opts={}) {
+export function fractalDimensionBoxCounting(points, width, height, opts={}){
   const { minBox=2, maxBox=Math.min(width,height), steps=8 } = opts;
   if (!points || points.length===0) return { D:NaN, R2:0, samples:[] };
-  // log-spaced scales
   const scales=[], logMin=Math.log(minBox), logMax=Math.log(maxBox);
   for(let i=0;i<steps;i++){
     const s=Math.round(Math.exp(logMax + (logMin-logMax)*(i/(steps-1))));
@@ -28,7 +27,6 @@ export function fractalDimensionBoxCounting(points, width, height, opts={}) {
   }
   const samples=[];
   for(const s of scales){
-    const gx=Math.ceil(width/s), gy=Math.ceil(height/s);
     const set=new Set();
     for(const [x,y] of points){
       const ix=Math.floor(Math.max(0,Math.min(width-1,x))/s);
@@ -54,15 +52,14 @@ export function fractalDimensionDBC(getPixel, width, height, opts={}){
   }
   const samples=[];
   for(const s of scales){
-    const gx=Math.ceil(width/s), gy=Math.ceil(height/s);
-    let N=0; const dz=Math.ceil(zLevels/s);
-    for(let gyi=0;gyi<gy;gyi++){
-      for(let gxi=0;gxi<gx;gxi++){
-        const x0=gxi*s, y0=gyi*s, x1=Math.min(x0+s,width), y1=Math.min(y0+s,height);
+    let N=0; const dz=Math.max(1, Math.ceil(zLevels/s));
+    for(let y=0;y<height;y+=s){
+      for(let x=0;x<width;x+=s){
         let minI=255, maxI=0;
-        for(let y=y0;y<y1;y++){
-          for(let x=x0;x<x1;x++){
-            const v=getPixel(x,y)|0;
+        const yEnd=Math.min(height, y+s), xEnd=Math.min(width, x+s);
+        for(let yy=y; yy<yEnd; yy++){
+          for(let xx=x; xx<xEnd; xx++){
+            const v=getPixel(xx,yy)|0;
             if(v<minI) minI=v; if(v>maxI) maxI=v;
           }
         }
@@ -77,8 +74,8 @@ export function fractalDimensionDBC(getPixel, width, height, opts={}){
   return { D:slope, R2:r2, samples };
 }
 
-// ===== ช่วยวาดกราฟลง <canvas id="fdPlot"> =====
-export function drawFDPlot(canvas, samples, title, line={}) {
+// ===== วาดกราฟลง <canvas id="fdPlot"> =====
+export function drawFDPlot(canvas, samples, title, line={}){
   if(!canvas) return;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -93,7 +90,6 @@ export function drawFDPlot(canvas, samples, title, line={}) {
   const X=samples.map(o=>Math.log(1/o.s)), Y=samples.map(o=>Math.log(o.N));
   const xmin=Math.min(...X), xmax=Math.max(...X);
   const ymin=Math.min(...Y), ymax=Math.max(...Y);
-
   const sx=(x)=> x0 + (x - xmin) / (xmax-xmin+1e-9) * (x1-x0);
   const sy=(y)=> y0 - (y - ymin) / (ymax-ymin+1e-9) * (y0-y1);
 
@@ -111,8 +107,8 @@ export function drawFDPlot(canvas, samples, title, line={}) {
     ctx.beginPath(); ctx.arc(px,py,3,0,Math.PI*2); ctx.fill();
   }
 
-  // regression line (optional)
-  if(line && isFinite(line.slope)){
+  // regression line
+  if(line && Number.isFinite(line.slope)){
     const { slope, intercept } = line;
     const yA=slope*xmin + intercept, yB=slope*xmax + intercept;
     ctx.strokeStyle='#7bdfff'; ctx.lineWidth=1.5;
