@@ -37,9 +37,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const mix=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
 const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
-/* ===== Materials (per-band attenuation) =====
-   ตัวเลขนี้เป็นแนวทางใช้หน้างาน: 5 GHz แพ้วัสดุมากกว่า
-   คุณยัง “ใส่ค่า 2.4 GHz” เองได้จากช่อง input; ระบบจะคำนวณ 5 GHz ตามอัตราส่วน default ของชนิดนั้น */
+/* ===== Materials (per-band attenuation) ===== */
 const MATERIALS={
   drywall:{name:'ผนังยิปซัม (Drywall)',color:'#98c1ff',att:{'2.4':3, '5':4}},
   glass:{name:'กระจก',color:'#7de1ff',att:{'2.4':4, '5':6}},
@@ -49,7 +47,6 @@ const MATERIALS={
   metal:{name:'โลหะแผ่น/ประตูเหล็ก',color:'#ffd36a',att:{'2.4':20,'5':24}},
   human:{name:'ร่างกายคน (เฉลี่ย)',color:'#d6b3ff',att:{'2.4':3, '5':4}}
 };
-
 (function fillMat(){
   const sel=$('#matType');
   Object.keys(MATERIALS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=MATERIALS[k].name; sel.appendChild(o); });
@@ -57,7 +54,7 @@ const MATERIALS={
   sel.addEventListener('change',()=>$('#matAtt').value=MATERIALS[sel.value].att['2.4']);
 })();
 
-/* ===== Canvas, world/viewport transform (ซูม/แพน) ===== */
+/* ===== Canvas / view ===== */
 const canvas=$('#canvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
 const overlay=$('#overlay'), octx=overlay.getContext('2d',{willReadFrequently:true});
 const stage=$('#stage');
@@ -85,11 +82,8 @@ let hasRendered=false;
 /* Heat buffers */
 let heatCanvas=null, heatField=null;
 
-// —— helper: sync globals for fractal helpers ——
-function syncGlobals(){
-  window.worldW = worldW; window.worldH = worldH;
-  window.heatCanvas = heatCanvas; window.heatField = heatField;
-}
+// ให้ fd.js (หรือผู้ช่วยอื่น) เห็นค่า global
+function syncGlobals(){ window.worldW=worldW; window.worldH=worldH; window.heatCanvas=heatCanvas; window.heatField=heatField; }
 
 /* ===== UI refs ===== */
 const UI={
@@ -113,15 +107,12 @@ function drawBase(){
   ctx.restore();
   hideProbe();
 }
-
 function drawPermanent(){
   ctx.save(); ctx.setTransform(view.scale,0,0,view.scale,view.tx,view.ty);
-  // materials
   segments.forEach(s=>{
     const m=MATERIALS[s.type]||{color:'#fff',name:s.type};
     ctx.lineWidth=3/view.scale; ctx.strokeStyle=m.color;
     ctx.beginPath(); ctx.moveTo(s.a.x,s.a.y); ctx.lineTo(s.b.x,s.b.y); ctx.stroke();
-
     const mx=(s.a.x+s.b.x)/2, my=(s.a.y+s.b.y)/2, sp=worldToScreen({x:mx,y:my});
     ctx.save(); ctx.scale(1/view.scale,1/view.scale);
     ctx.fillStyle='#e8ecf1'; ctx.font='11px ui-monospace,monospace';
@@ -129,12 +120,10 @@ function drawPermanent(){
     ctx.fillText(label, sp.x+6, sp.y-6);
     ctx.restore();
   });
-  // APs
   aps.forEach(a=>{
     ctx.fillStyle='#8fd3ff';
     ctx.beginPath(); ctx.arc(a.x,a.y,7/view.scale,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#2a7fff'; ctx.lineWidth=2/view.scale; ctx.stroke();
-
     const sp=worldToScreen(a);
     ctx.save(); ctx.scale(1/view.scale,1/view.scale);
     ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
@@ -178,7 +167,7 @@ function segIntersect(p1,p2,q1,q2){
   return false;
 }
 
-/* ===== Obstacle loss (ใช้ตามย่าน) ===== */
+/* ===== Obstacle loss ===== */
 function pathObstacleLoss(pFrom,pTo,band){
   let loss=0;
   for(const s of segments){
@@ -336,7 +325,6 @@ $('#loadJson').addEventListener('change', e=>{
       const obj=JSON.parse(reader.result);
       aps=obj.aps||[]; segments=(obj.segments||[]).map(s=>{
         if(s.att24==null && s.att5==null){
-          // โปรเจ็กต์เก่า: มี s.att เดี่ยว → แปลงเป็น per-band ตาม default ของชนิด
           const base24 = s.att ?? 8;
           const def = MATERIALS[s.type]?.att || {'2.4':base24,'5':base24};
           const ratio = (def['5']||base24)/(def['2.4']||base24);
@@ -405,7 +393,7 @@ canvas.addEventListener('mouseup', e=>{
 });
 canvas.addEventListener('mouseleave', ()=>{ panAnchor=null; if(appMode!=='planning') return; dragging=false; dragStart=null; clearOverlay(); });
 
-/* ===== Drag helpers (world coords) ===== */
+/* ===== Drag helpers ===== */
 function drawArrowWorld(a,b,opts={}){
   const {color='#6ae3ff',width=3.5,head=12,dash=[10,6],label=''}=opts;
   octx.save(); octx.clearRect(0,0,overlay.width,overlay.height); octx.setTransform(1,0,0,1,0,0);
@@ -440,7 +428,6 @@ function endDrag(x,y){
     mode='idle'; $('#modeBadge').textContent='โหมด: Idle'; drawAll();
   }else if(mode==='mat'){
     const type=$('#matType').value;
-    // เอาค่าที่ผู้ใช้ใส่เป็น “ค่า 2.4 GHz” แล้วอนุมานค่า 5 GHz ตามอัตราส่วน default ของวัสดุนั้น
     const base24=parseFloat($('#matAtt').value)|| (MATERIALS[type]?.att?.['2.4'] ?? 8);
     const def = MATERIALS[type]?.att || {'2.4':base24,'5':base24};
     const ratio = (def['5']||base24)/(def['2.4']||base24);
@@ -469,13 +456,11 @@ canvas.addEventListener('click', e=>{
     showProbeAtScreen(screen.x, screen.y, world.x, world.y);
   }
 });
-
 function showProbeAtScreen(sx,sy,wx,wy){
   drawAll();
   ctx.save(); ctx.setTransform(1,0,0,1,0,0);
   ctx.beginPath(); ctx.arc(sx,sy,6,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.globalAlpha=.9; ctx.fill();
   ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke(); ctx.restore();
-
   const rssi=rssiFromAPs(wx,wy), col=colorFromRSSI(rssi);
   UI.probeVal.textContent=`${rssi.toFixed(1)} dBm`; UI.probeMeta.textContent=`x=${wx|0}, y=${wy|0}`;
   UI.probe.style.left=`${sx+10}px`; UI.probe.style.top=`${sy-10}px`; UI.probe.style.display='block';
@@ -543,24 +528,18 @@ window.addEventListener('resize', applyCanvasCSSSize);
   syncGlobals();
 })();
 
+/* ===============================
+   ===== FRACTAL: helpers  =======
+   =============================== */
 
-// ===============================
-// ===== FRACTAL: helpers ========
-// ===============================
-
-// 1) สร้างจุดจากคอนทัวร์ (marching squares แบบเร็ว) — ใช้ชุด level เดิมก็ได้
+// 1) เก็บจุดจากคอนทัวร์
 function collectContourPoints(levels = (typeof CONTOUR_LEVELS!=='undefined'? CONTOUR_LEVELS : [-60,-65,-70]), step = 2) {
   const f = (window.heatField || heatField); const w = (window.worldW || worldW); const h = (window.worldH || worldH);
   if (!f || !w || !h) return [];
   const field = f;
   const nx=Math.floor((w-1)/step), ny=Math.floor((h-1)/step);
   const pts=[];
-
-  const interp = (xa,ya,xb,yb,va,vb,L)=>{
-    const t=(L-va)/((vb-va)||1e-9);
-    return [xa+(xb-xa)*t, ya+(yb-ya)*t];
-  };
-
+  const interp = (xa,ya,xb,yb,va,vb,L)=>{ const t=(L-va)/((vb-va)||1e-9); return [xa+(xb-xa)*t, ya+(yb-ya)*t]; };
   for(const L of levels){
     for(let gy=0;gy<ny;gy++){
       const y0=gy*step, y1=y0+step;
@@ -569,15 +548,10 @@ function collectContourPoints(levels = (typeof CONTOUR_LEVELS!=='undefined'? CON
         const i00=y0*w+x0, i10=y0*w+x1, i11=y1*w+x1, i01=y1*w+x0;
         const v00=field[i00], v10=field[i10], v11=field[i11], v01=field[i01];
         const b0=v00>=L?1:0, b1=v10>=L?1:0, b2=v11>=L?1:0, b3=v01>=L?1:0;
-        const code=(b0)|(b1<<1)|(b2<<2)|(b3<<3);
-        if(code===0||code===15) continue;
-
-        const T = interp(x0,y0,x1,y0,v00,v10,L);
-        const R = interp(x1,y0,x1,y1,v10,v11,L);
-        const B = interp(x0,y1,x1,y1,v01,v11,L);
-        const Lp= interp(x0,y0,x0,y1,v00,v01,L);
+        const code=(b0)|(b1<<1)|(b2<<2)|(b3<<3); if(code===0||code===15) continue;
+        const T=interp(x0,y0,x1,y0,v00,v10,L), R=interp(x1,y0,x1,y1,v10,v11,L),
+              B=interp(x0,y1,x1,y1,v01,v11,L), Lp=interp(x0,y0,x0,y1,v00,v01,L);
         const push=(p,q)=>{ pts.push(p,q); };
-
         switch(code){
           case 1: case 14: push(Lp,T); break;
           case 2: case 13: push(T,R);  break;
@@ -591,13 +565,12 @@ function collectContourPoints(levels = (typeof CONTOUR_LEVELS!=='undefined'? CON
       }
     }
   }
-  // downsample ให้ไวขึ้น
   const stride = Math.max(1, Math.floor(pts.length/12000));
   const out=[]; for(let i=0;i<pts.length;i+=stride) out.push(pts[i]);
   return out;
 }
 
-// 2) getter ระดับเทา (0..255) จาก heatCanvas
+// 2) gray getter จาก heatCanvas
 function makeGrayGetterFromHeatCanvas(){
   const hc=(window.heatCanvas || heatCanvas); if(!hc) return null;
   const hctx=hc.getContext('2d',{willReadFrequently:true});
@@ -606,28 +579,25 @@ function makeGrayGetterFromHeatCanvas(){
   return (x,y)=>{
     if(x<0||y<0||x>=w||y>=h) return 0;
     const i=(y*w+x)*4, r=img[i], g=img[i+1], b=img[i+2];
-    // luma โดยประมาณ
     return Math.max(0,Math.min(255, Math.round(0.2126*r + 0.7152*g + 0.0722*b)));
   };
 }
 
-// 3) วาดกราฟลง #fdPlot
+// 3) วาดกราฟ FD
 function drawFD(samples, stats, title){
   const canvas=document.getElementById('fdPlot');
   if(!canvas) return;
-  // รองรับถ้าใช้แบบ global (ไม่ใช้ import)
   const draw = (window.drawFDPlot || (window.fd && window.fd.drawFDPlot));
   if (draw) {
     draw(canvas, samples, title, { slope: stats?.slope, intercept: stats?.intercept });
   } else {
-    // fallback แบบง่าย
     const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.fillStyle='#cfe6ff'; ctx.font='12px ui-monospace,monospace';
     ctx.fillText('FD: '+title, 10, 20);
   }
 }
 
-// reg helper (ภายใน app.js)
+// linear stats helper
 function linearStats(X,Y){
   const n=X.length; if(!n) return {};
   const sx=X.reduce((p,c)=>p+c,0), sy=Y.reduce((p,c)=>p+c,0);
@@ -637,7 +607,7 @@ function linearStats(X,Y){
   return { slope, intercept };
 }
 
-// ===== Events: ปุ่มคำนวณ FD =====
+/* ===== Events: ปุ่มคำนวณ FD ===== */
 (function initFractalFeature(){
   const elC = document.getElementById('btnFDContour');
   const elD = document.getElementById('btnFDDBC');
@@ -648,12 +618,10 @@ function linearStats(X,Y){
     const hf = (window.heatField || heatField);
     if(!hf){ alert('ยังไม่มี Heatmap — กด "สร้าง Heatmap" ก่อน'); return; }
     const pts=collectContourPoints(typeof CONTOUR_LEVELS!=='undefined'? CONTOUR_LEVELS : [-60,-65,-70], 2);
-    // รองรับ import หรือ global
     const fn = (window.fractalDimensionBoxCounting || (window.fd && window.fd.fractalDimensionBoxCounting));
     if(!fn){ alert('fd.js ไม่ถูกโหลด'); return; }
     const { D, R2, samples } = fn(pts, (window.worldW||worldW), (window.worldH||worldH), { steps:8, minBox:2 });
     if(out) out.textContent = `FD (Contour Box-counting): D=${(D||0).toFixed(3)} | R²=${(R2||0).toFixed(3)} | points=${pts.length}`;
-    // วาดกราฟ
     const X=samples.map(o=>Math.log(1/o.s)), Y=samples.map(o=>Math.log(o.N));
     const stats = linearStats(X,Y);
     drawFD(samples, stats, 'Contour (log N vs log 1/s)');
@@ -667,7 +635,6 @@ function linearStats(X,Y){
     if(!fn){ alert('fd.js ไม่ถูกโหลด'); return; }
     const { D, R2, samples } = fn(getPixel, (window.worldW||worldW), (window.worldH||worldH), { steps:6, minBox:4, zLevels:256 });
     if(out) out.textContent = `FD (DBC on Heatmap): D=${(D||0).toFixed(3)} | R²=${(R2||0).toFixed(3)}`;
-    // วาดกราฟ
     const X=samples.map(o=>Math.log(1/o.s)), Y=samples.map(o=>Math.log(o.N));
     const stats = linearStats(X,Y);
     drawFD(samples, stats, 'DBC (log N vs log 1/s)');
