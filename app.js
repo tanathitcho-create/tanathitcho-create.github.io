@@ -531,3 +531,136 @@ window.addEventListener('resize', applyCanvasCSSSize);
   worldW=canvas.width; worldH=canvas.height;
   resetView(); applyCanvasCSSSize(); drawAll(); loadApPresets();
 })();
+/* ===== SURVEY MODE: live RSSI + file ingest + IDW heatmap ===== */
+let ws=null, surveyPts=[], curPos=null, freezePos=false, surveyMarkMode=false;
+
+// refs
+const wsUrl=$('#wsUrl'), wsStatus=$('#wsStatus');
+const btnWSConnect=$('#btnWSConnect'), btnWSDisconnect=$('#btnWSDisconnect');
+const btnMarkHere=$('#btnMarkHere'), btnFreeze=$('#btnFreeze'), btnUnfreeze=$('#btnUnfreeze'), curPosLabel=$('#curPosLabel');
+const surveyFile=$('#surveyFile'), btnLoadFile=$('#btnLoadFile');
+const svCount=$('#svCount'), btnRenderSurvey=$('#btnRenderSurvey'), btnExportSurvey=$('#btnExportSurvey');
+
+function setWSStatus(s){ if(wsStatus) wsStatus.textContent="WS: "+s; }
+function fmtPos(p){ return p?`(${p.x|0}, ${p.y|0})`:'ยังไม่ตั้ง'; }
+function addSurveySample(t,rssi,bssid=null,ssid=null){ if(!curPos) return; surveyPts.push({x:curPos.x,y:curPos.y,time:+t,rssi:+rssi,bssid,ssid}); if(svCount) svCount.textContent=surveyPts.length; }
+
+if(btnWSConnect){
+  btnWSConnect.onclick=()=>{
+    try{
+      ws?.close(); const url=(wsUrl.value||'').trim(); if(!url){ alert("ใส่ WS URL ก่อน เช่น ws://192.168.1.50:8765"); return; }
+      ws=new WebSocket(url); setWSStatus("connecting...");
+      ws.onopen =()=>setWSStatus("connected");
+      ws.onclose=()=>setWSStatus("disconnected");
+      ws.onerror=()=>setWSStatus("error");
+      ws.onmessage=(ev)=>{ try{ const m=JSON.parse(ev.data); if(m.type==="sample") addSurveySample(m.time,m.rssi_dbm,m.bssid||null,m.ssid||null);}catch{} };
+    }catch{ setWSStatus("error"); }
+  };
+  btnWSDisconnect.onclick=()=>{ try{ws?.close()}catch{}; ws=null; setWSStatus("disconnected"); };
+}
+
+if(btnMarkHere){ btnMarkHere.onclick=()=>{ surveyMarkMode=true; UI.modeBadge.textContent='โหมด: เลือกตำแหน่งสำรวจ (คลิกบนแปลน)'; }; }
+if(btnFreeze){ btnFreeze.onclick = ()=>{ freezePos=true;  }; }
+if(btnUnfreeze){ btnUnfreeze.onclick= ()=>{ freezePos=false; }; }
+
+// ใช้คลิกบน canvas เพื่อกำหนด/ย้ายตำแหน่ง (เฉพาะตอนอยู่โหมด Survey)
+canvas.addEventListener('click', e=>{
+  if(appMode!=='survey') return;
+  const {world}=getCanvasPos(e);
+  if(surveyMarkMode){
+    curPos={x:world.x,y:world.y}; curPosLabel.textContent=fmtPos(curPos);
+    surveyMarkMode=false; UI.modeBadge.textContent='โหมด: Survey';
+  }else if(!freezePos && curPos){
+    curPos={x:world.x,y:world.y}; curPosLabel.textContent=fmtPos(curPos);
+  }
+});
+
+// โหลดไฟล์ออฟไลน์ (รองรับ .csv/.tsv/.json)
+if(btnLoadFile){
+  btnLoadFile.onclick=()=>{
+    const f=surveyFile.files?.[0]; if(!f){ alert('เลือกไฟล์ก่อน'); return; }
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const txt=reader.result;
+        if(f.name.endsWith(".json")||txt.trim().startsWith("{")||txt.trim().startsWith("[")){
+          const arr=JSON.parse(txt);
+          arr.forEach(o=>{
+            const t=+o.time, r=+o.rssi_dbm; if(!Number.isFinite(t)||!Number.isFinite(r)) return;
+            const p=(Number.isFinite(o.x)&&Number.isFinite(o.y))?{x:+o.x,y:+o.y}:curPos; if(!p) return;
+            surveyPts.push({x:p.x,y:p.y,time:t,rssi:r,bssid:o.bssid||null,ssid:o.ssid||null});
+          });
+        }else{
+          const delim=txt.indexOf("\t")>=0?"\t":","; const lines=txt.split(/\r?\n/).filter(Boolean);
+          const head=lines[0].split(delim).map(s=>s.trim().toLowerCase());
+          const idx=k=>head.findIndex(h=>h===k||h.includes(k));
+          const it=idx("time"), ir=idx("rssi"), ix=idx("x"), iy=idx("y"), ib=idx("bssid"), isd=idx("ssid");
+          for(let i=1;i<lines.length;i++){
+            const cols=lines[i].split(delim); const t=+cols[it], r=+cols[ir]; if(!Number.isFinite(t)||!Number.isFinite(r)) continue;
+            const hasXY=ix>=0&&iy>=0&&Number.isFinite(+cols[ix])&&Number.isFinite(+cols[iy]);
+            const p=hasXY?{x:+cols[ix],y:+cols[iy]}:curPos; if(!p) continue;
+            surveyPts.push({x:p.x,y:p.y,time:t,rssi:r,bssid:ib>=0?(cols[ib]||null):null,ssid:isd>=0?(cols[isd]||null):null});
+          }
+        }
+        if(svCount) svCount.textContent=surveyPts.length;
+        alert("โหลดข้อมูลสำรวจแล้ว: "+surveyPts.length+" จุด"); drawAll();
+      }catch{ alert("อ่านไฟล์ไม่สำเร็จ"); }
+    };
+    reader.readAsText(f);
+  };
+}
+
+// ส่งออกจุดสำรวจ
+if(btnExportSurvey){
+  btnExportSurvey.onclick=()=>{
+    const rows=[["x","y","time","rssi_dbm","bssid","ssid"], ...surveyPts.map(p=>[p.x,p.y,p.time,p.rssi,p.bssid||"",p.ssid||""])];
+    const csv=rows.map(r=>r.join(",")).join("\n");
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.download="survey_points.csv"; a.click(); URL.revokeObjectURL(a.href);
+  };
+}
+
+// IDW heatmap จากจุดจริง (ใช้ colorFromRSSI / drawContours เดิม)
+function renderSurveyHeatmap(){
+  if(!surveyPts.length){ alert("ยังไม่มีจุดสำรวจ"); return; }
+  if(!scalePxPerMeter){ alert("ยังไม่ตั้งสเกล (ตั้งที่แท็บ Planning)"); return; }
+  const step=Math.max(1,parseInt($('#svStep').value||'3',10));
+  const pow =Math.max(0.1,parseFloat($('#svPow').value||'2.0'));
+  const radM=Math.max(0.1,parseFloat($('#svRadiusM').value||'6'));
+  const kmin=Math.max(1,parseInt($('#svKMin').value||'1',10));
+  const radPx=radM*scalePxPerMeter;
+
+  heatCanvas=document.createElement('canvas'); heatCanvas.width=worldW; heatCanvas.height=worldH;
+  const hctx=heatCanvas.getContext('2d',{willReadFrequently:true});
+  const img=hctx.createImageData(worldW,worldH); heatField=new Float32Array(worldW*worldH); const arr=img.data;
+
+  // spatial buckets เร่งค้นหาเพื่อนบ้าน
+  const cell=Math.max(step*4,24), nx=Math.ceil(worldW/cell), ny=Math.ceil(worldH/cell);
+  const buckets=Array.from({length:nx*ny},()=>[]);
+  const bkey=(x,y)=>Math.min(ny-1,Math.max(0,Math.floor(y/cell)))*nx + Math.min(nx-1,Math.max(0,Math.floor(x/cell)));
+  surveyPts.forEach(p=>buckets[bkey(p.x,p.y)].push(p));
+  const neigh=(x,y)=>{ const ix=Math.min(nx-1,Math.max(0,Math.floor(x/cell)));
+    const iy=Math.min(ny-1,Math.max(0,Math.floor(y/cell))); const out=[];
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){ const jx=ix+dx,jy=iy+dy; if(jx<0||jy<0||jx>=nx||jy>=ny) continue; out.push(...buckets[jy*nx+jx]); }
+    return out; };
+
+  for(let y=0;y<worldH;y+=step){
+    for(let x=0;x<worldW;x+=step){
+      const N=neigh(x,y); let num=0,den=0,cnt=0;
+      for(const p of N){
+        const d=Math.hypot(x-p.x,y-p.y);
+        if(d<=radPx){ const w=1/Math.pow(Math.max(d,1e-6),pow); num+=w*p.rssi; den+=w; cnt++; }
+      }
+      const rssi=(cnt>=kmin && den>0)?(num/den):RSSI_MIN;
+      const [r,g,b]=colorFromRSSI(rssi);
+      for(let yy=0;yy<step;yy++){ const Y=y+yy; if(Y>=worldH) break;
+        for(let xx=0;xx<step;xx++){ const X=x+xx; if(X>=worldW) break;
+          heatField[Y*worldW+X]=rssi; const i=(Y*worldW+X)*4; arr[i]=r; arr[i+1]=g; arr[i+2]=b; arr[i+3]=255;
+        }}
+    }
+  }
+  hctx.putImageData(img,0,0);
+  drawAll(); hasRendered=true; drawContours(CONTOUR_LEVELS,2);
+}
+if(btnRenderSurvey){ btnRenderSurvey.onclick=renderSurveyHeatmap; }
+
