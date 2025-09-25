@@ -211,40 +211,86 @@
   <main class="panel" style="display:flex;flex-direction:column;gap:12px">
     <div class="row">
       <span class="badge">โหมด: Survey</span>
-      <span class="muted small">เชื่อม WS สด หรือโหลดไฟล์ แล้วคลิกกำหนดตำแหน่งบนแปลนเพื่อเก็บ RSSI จริง</span>
+      <span class="muted small">เชื่อม WS สด / โหลดไฟล์, อัปโหลดแปลน, ตั้งสเกล, และเดินกำหนดเส้นทางให้ระบบแม็ป RSSI ตามเวลา → ฮีตแมป</span>
     </div>
 
+    <!-- 0) อัปโหลดแปลน + คุมซูม (ในหน้า Survey เอง) -->
     <div class="section">
-      <div class="label">1) เชื่อม WebSocket (สด)</div>
+      <div class="label">0) อัปโหลดแปลนห้อง (PNG/JPG) — ใช้แคนวาสเดียวกับ Planning</div>
+      <div class="row">
+        <input type="file" id="surveyPlanFile" accept="image/*"/>
+        <button id="surveyPlanClear">ล้าง</button>
+        <div class="zoombar">
+          <button id="svZoomOut">−</button>
+          <button id="svZoomReset">100%</button>
+          <button id="svZoomIn">+</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="svSetScale">🧭 ตั้งสเกล (กดค้าง–ลาก–ปล่อยบนแผนผัง)</button>
+        <span class="chip">สเกลปัจจุบัน: <span id="svScaleLabel">ยังไม่ตั้ง</span></span>
+      </div>
+      <div class="small muted">สเกล (px/เมตร) ใช้ร่วมกับ Planning — ตั้งได้จากหน้าที่ไหนก็ได้</div>
+    </div>
+
+    <!-- 1) รับข้อมูลสดผ่าน WebSocket -->
+    <div class="section">
+      <div class="label">1) เชื่อม WebSocket (สดจากเครื่องเก็บค่า)</div>
       <div class="row">
         <input type="text" id="wsUrl" style="min-width:260px" placeholder="ws://192.168.1.50:8765"/>
         <button id="btnWSConnect">เชื่อมต่อ</button>
         <button id="btnWSDisconnect">ตัดการเชื่อม</button>
         <span class="chip" id="wsStatus">WS: disconnected</span>
       </div>
+      <div class="small muted">ใช้สคริปต์ <code>scripts/rssi_ws_server.py</code> บนเครื่องเก็บค่า (monitor mode)</div>
     </div>
 
+    <!-- 2) โหมดเดินตามเส้นทาง: เลือกจุดเริ่ม–จบ + จับเวลาช่วงเดิน -->
     <div class="section">
-      <div class="label">2) ตำแหน่งผู้สำรวจ</div>
-      <div class="row">
-        <button id="btnMarkHere">📍 กำหนดตำแหน่ง (คลิกบนแปลน)</button>
-        <button id="btnFreeze">⏸️ ค้างตำแหน่ง</button>
-        <button id="btnUnfreeze">▶️ ปลดค้าง</button>
-        <span class="chip">ตำแหน่งปัจจุบัน: <span id="curPosLabel">ยังไม่ตั้ง</span></span>
+      <div class="label">2) เดินตามเส้นทาง (ระบบแม็ป RSSI → ตำแหน่งตามเวลา)</div>
+      <div class="grid">
+        <div>
+          <div class="label">จุดเริ่ม</div>
+          <button id="btnPickStart">📍 คลิกบนแปลนเพื่อเลือก</button>
+          <div class="small muted">Start: <span id="lblStart">(ยังไม่เลือก)</span></div>
+        </div>
+        <div>
+          <div class="label">เวลาเริ่ม</div>
+          <button id="btnTimeStart">⏱️ เริ่มจับเวลา</button>
+          <div class="small muted">t₀: <span id="lblT0">–</span></div>
+        </div>
+        <div>
+          <div class="label">จุดจบ</div>
+          <button id="btnPickEnd">🏁 คลิกบนแปลนเพื่อเลือก</button>
+          <div class="small muted">End: <span id="lblEnd">(ยังไม่เลือก)</span></div>
+        </div>
+        <div>
+          <div class="label">เวลาจบ</div>
+          <button id="btnTimeEnd">⏱️ จบจับเวลา</button>
+          <div class="small muted">t₁: <span id="lblT1">–</span></div>
+        </div>
       </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnCommitSegment">✅ แปลง RSSI→จุดสำรวจ ตามช่วงเวลา/เส้นทาง</button>
+        <button id="btnResetSegment">♻️ ล้างช่วง</button>
+        <span class="chip">Samples ใหม่จากช่วงนี้: <span id="lblNewCnt">0</span></span>
+      </div>
+      <div class="small muted">ขั้นตอน: เลือกจุดเริ่ม → กด “เริ่มจับเวลา” → เดิน → เลือกจุดจบ → กด “จบจับเวลา” → กด “แปลง”</div>
     </div>
 
+    <!-- 3) โหลดจากไฟล์ (ถ้าไม่ใช้สด / หรือไฟล์ออฟไลน์) -->
     <div class="section">
-      <div class="label">3) โหลดจากไฟล์ (ออฟไลน์)</div>
+      <div class="label">3) โหลดจากไฟล์ (CSV/TSV/JSON)</div>
       <div class="row">
         <input type="file" id="surveyFile" accept=".csv,.tsv,.txt,application/json"/>
         <button id="btnLoadFile">โหลดไฟล์</button>
-        <span class="muted small">ต้องมีอย่างน้อย: time, rssi_dbm (ถ้ามี x,y จะใช้ตำแหน่งนั้น)</span>
+        <span class="muted small">รองรับ: (ก) time,rssi_dbm → จะใช้คู่กับช่วงเดิน, (ข) x,y,time,rssi_dbm → ใช้จุดนั้นได้ทันที</span>
       </div>
     </div>
 
+    <!-- 4) เรนเดอร์ฮีตแมปจากจุดจริง -->
     <div class="section">
-      <div class="label">4) เรนเดอร์ฮีตแมปจากจุดจริง</div>
+      <div class="label">4) เรนเดอร์ฮีตแมปจากจุดสำรวจจริง (IDW)</div>
       <div class="grid">
         <div><div class="label">Grid step (px)</div><input type="number" id="svStep" value="3" min="1" step="1"/></div>
         <div><div class="label">IDW power</div><input type="number" id="svPow" value="2.0" step="0.2"/></div>
@@ -254,9 +300,11 @@
       <div class="row" style="margin-top:8px">
         <button id="btnRenderSurvey">🔥 เรนเดอร์จากข้อมูลจริง</button>
         <button id="btnExportSurvey">💾 ส่งออกจุดสำรวจ (CSV)</button>
-        <span class="chip">Samples: <span id="svCount">0</span></span>
+        <span class="chip">Samples สะสม: <span id="svCount">0</span></span>
       </div>
     </div>
+  </main>
+</div>
 
     <div class="small muted">หมายเหตุ: ใช้แผนผัง/สเกลเดียวกับแท็บ Planning (อัปโหลดภาพ & ตั้งสเกลที่นั้นก่อน)</div>
   </main>
