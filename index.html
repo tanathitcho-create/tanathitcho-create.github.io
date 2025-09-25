@@ -206,16 +206,62 @@
   </main>
 </div>
 
-<!-- Survey (placeholder) -->
+<!-- Survey -->
 <div class="container" id="appSurvey" style="display:none;grid-template-columns:1fr">
   <main class="panel" style="display:flex;flex-direction:column;gap:12px">
     <div class="row">
-      <span class="badge">โหมด: Survey (Placeholder)</span>
-      <span class="muted small">หน้านี้เว้นว่างไว้ให้คุณพัฒนาต่อ</span>
+      <span class="badge">โหมด: Survey</span>
+      <span class="muted small">เชื่อม WS สด หรือโหลดไฟล์ แล้วคลิกกำหนดตำแหน่งบนแปลนเพื่อเก็บ RSSI จริง</span>
     </div>
-    <div class="surveyBlank">Survey Mode — Blank Canvas</div>
+
+    <div class="section">
+      <div class="label">1) เชื่อม WebSocket (สด)</div>
+      <div class="row">
+        <input type="text" id="wsUrl" style="min-width:260px" placeholder="ws://192.168.1.50:8765"/>
+        <button id="btnWSConnect">เชื่อมต่อ</button>
+        <button id="btnWSDisconnect">ตัดการเชื่อม</button>
+        <span class="chip" id="wsStatus">WS: disconnected</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">2) ตำแหน่งผู้สำรวจ</div>
+      <div class="row">
+        <button id="btnMarkHere">📍 กำหนดตำแหน่ง (คลิกบนแปลน)</button>
+        <button id="btnFreeze">⏸️ ค้างตำแหน่ง</button>
+        <button id="btnUnfreeze">▶️ ปลดค้าง</button>
+        <span class="chip">ตำแหน่งปัจจุบัน: <span id="curPosLabel">ยังไม่ตั้ง</span></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">3) โหลดจากไฟล์ (ออฟไลน์)</div>
+      <div class="row">
+        <input type="file" id="surveyFile" accept=".csv,.tsv,.txt,application/json"/>
+        <button id="btnLoadFile">โหลดไฟล์</button>
+        <span class="muted small">ต้องมีอย่างน้อย: time, rssi_dbm (ถ้ามี x,y จะใช้ตำแหน่งนั้น)</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">4) เรนเดอร์ฮีตแมปจากจุดจริง</div>
+      <div class="grid">
+        <div><div class="label">Grid step (px)</div><input type="number" id="svStep" value="3" min="1" step="1"/></div>
+        <div><div class="label">IDW power</div><input type="number" id="svPow" value="2.0" step="0.2"/></div>
+        <div><div class="label">Neighbor radius (m)</div><input type="number" id="svRadiusM" value="6" step="0.5"/></div>
+        <div><div class="label">Min neighbors</div><input type="number" id="svKMin" value="1" min="1" step="1"/></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnRenderSurvey">🔥 เรนเดอร์จากข้อมูลจริง</button>
+        <button id="btnExportSurvey">💾 ส่งออกจุดสำรวจ (CSV)</button>
+        <span class="chip">Samples: <span id="svCount">0</span></span>
+      </div>
+    </div>
+
+    <div class="small muted">หมายเหตุ: ใช้แผนผัง/สเกลเดียวกับแท็บ Planning (อัปโหลดภาพ & ตั้งสเกลที่นั้นก่อน)</div>
   </main>
 </div>
+
 
 <script src="./app.js"></script>
 </body>
