@@ -1,7 +1,6 @@
-/* ============================================================
-   Wi-Fi Heatmap — core (ใช้ซ้ำได้ 2 อินสแตนซ์: Planning / Survey)
-   โคลน UI/Behavior 1:1 ด้วยการเปลี่ยน prefix เท่านั้น
-   ============================================================ */
+/* =========================
+   Planning x2 (Plan 1 / 2)
+   ========================= */
 
 const MATERIALS={
   drywall:{name:'ผนังยิปซัม (Drywall)',color:'#98c1ff',att:{'2.4':3,'5':4}},
@@ -26,17 +25,18 @@ const mix=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1
 const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
 class WiFiApp{
-  constructor(prefix){
-    this.p=prefix; // เช่น 'Planning' หรือ 'Survey'
+  static activePrefix='P1'; // สำหรับคีย์ลัดให้ทำงานกับแท็บที่เปิดอยู่
+  static setActive(prefix){ WiFiApp.activePrefix=prefix; }
 
-    // canvases
+  constructor(prefix){
+    this.p=prefix;
+
     this.canvas = $(`#canvas${this.p}`);
     this.ctx    = this.canvas.getContext('2d',{willReadFrequently:true});
     this.overlay= $(`#overlay${this.p}`);
     this.octx   = this.overlay.getContext('2d',{willReadFrequently:true});
     this.stage  = $(`#stage${this.p}`);
 
-    // UI refs
     this.UI = {
       modeBadge: $(`#modeBadge${this.p}`),
       scaleLabel: $(`#scaleLabel${this.p}`),
@@ -63,7 +63,7 @@ class WiFiApp{
       btnZoomReset:$(`#btnZoomReset${this.p}`),
       btnScale:$(`#btnScale${this.p}`),
       btnIdle:$(`#btnIdle${this.p}`),
-      btnAP:$(`#btnAP${this.p}`),
+      btnAP:$(`#btnAPP${this.p}`),
       btnAPUndo:$(`#btnAPUndo${this.p}`),
       btnAPClear:$(`#btnAPClear${this.p}`),
       btnMat:$(`#btnMat${this.p}`),
@@ -81,8 +81,7 @@ class WiFiApp{
     this.worldW=this.canvas.width; this.worldH=this.canvas.height;
     this.view={ scale:1, tx:0, ty:0, min:0.2, max:6 };
     this.floorImg=null;
-    this.aps=[];        // {x,y,label,p0,band,preset?}
-    this.segments=[];   // {a:{x,y}, b:{x,y}, type, att24, att5}
+    this.aps=[]; this.segments=[];
     this.mode='idle';
     this.dragging=false; this.dragStart=null;
     this.spacePan=false; this.panAnchor=null;
@@ -92,6 +91,10 @@ class WiFiApp{
     this.buildingHeat=false;
     this.AP_PRESETS={}; window.__currentApPreset=null;
 
+    // ensure overlay size = canvas size (in case CSS scales)
+    const fitOverlay=()=>{ this.overlay.width=this.canvas.width; this.overlay.height=this.canvas.height; };
+    fitOverlay(); window.addEventListener('resize', fitOverlay);
+
     this._wireUI();
     this._initMatDrop();
     this._resetView();
@@ -100,7 +103,7 @@ class WiFiApp{
     this._loadApPresets();
   }
 
-  /* ===== helpers ===== */
+  /* ===== helpers & render ===== */
   _setView(s,tx,ty){ this.view.scale=clamp(s,this.view.min,this.view.max); this.view.tx=tx; this.view.ty=ty; this._drawAll(); }
   _resetView(){
     const pad=20, sx=(this.canvas.width-2*pad)/this.worldW, sy=(this.canvas.height-2*pad)/this.worldH, s=Math.min(sx,sy);
@@ -162,8 +165,8 @@ class WiFiApp{
     ctx.restore();
   }
   _drawContours(levels, step=2){
-    const ctx=this.ctx;
     if(!this.heatField) return;
+    const ctx=this.ctx;
     ctx.save(); ctx.setTransform(this.view.scale,0,0,this.view.scale,this.view.tx,this.view.ty);
     ctx.strokeStyle='#fff'; ctx.lineWidth=1.3/this.view.scale;
     const w=this.worldW, h=this.worldH, nx=Math.floor((w-1)/step), ny=Math.floor((h-1)/step);
@@ -196,8 +199,7 @@ class WiFiApp{
     ctx.restore();
   }
   _drawAll(){
-    this.UI.legendMin.textContent=RSSI_MIN;
-    this.UI.legendMax.textContent=RSSI_MAX;
+    this.UI.legendMin.textContent=RSSI_MIN; this.UI.legendMax.textContent=RSSI_MAX;
     this._drawBase();
     if(this.heatCanvas){
       const alpha=clamp(parseFloat(this.UI.alpha?.value||'0.6'),0,1);
@@ -228,7 +230,7 @@ class WiFiApp{
   }
 
   _pathObstacleLoss(pFrom,pTo,band){
-    const segs=this.segments; let loss=0;
+    let loss=0;
     const orient=(a,b,c)=> (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
     const onSeg=(a,b,c)=> Math.min(a.x,b.x)-1e-6<=c.x && c.x<=Math.max(a.x,b.x)+1e-6 && Math.min(a.y,b.y)-1e-6<=c.y && c.y<=Math.max(a.y,b.y)+1e-6;
     const inter=(p1,p2,q1,q2)=>{
@@ -240,7 +242,7 @@ class WiFiApp{
       if(Math.abs(o4)<1e-8 && onSeg(q1,q2,p2)) return true;
       return false;
     };
-    for(const s of segs){
+    for(const s of this.segments){
       if(inter(pFrom,pTo,s.a,s.b)){
         if(band==='2.4') loss += (s.att24 ?? s.att ?? 0);
         else              loss += (s.att5  ?? s.att ?? 0);
@@ -300,38 +302,29 @@ class WiFiApp{
     this.hasRendered=true;
   }
 
-  /* ===== probe ===== */
-  _showProbeAtScreen(sx,sy,wx,wy){
-    this._drawAll();
-    const ctx=this.ctx;
-    ctx.save(); ctx.setTransform(1,0,0,1,0,0);
-    ctx.beginPath(); ctx.arc(sx,sy,6,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.globalAlpha=.9; ctx.fill();
-    ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke(); ctx.restore();
-
-    const rssi=this._rssiFromAPs(wx,wy), col=this._colorFromRSSI(rssi);
-    this.UI.probeVal.textContent=`${rssi.toFixed(1)} dBm`; this.UI.probeMeta.textContent=`x=${wx|0}, y=${wy|0}`;
-    this.UI.probe.style.left=`${sx+10}px`; this.UI.probe.style.top=`${sy-10}px`; this.UI.probe.style.display='block';
-    this.UI.probeSw.style.background = rgbStr(col);
-  }
-  _hideProbe(){ this.UI.probe.style.display='none'; }
-
-  /* ===== UI bindings ===== */
+  /* ===== UI binding ===== */
   _wireUI(){
-    // zoom buttons
+    // zoom
     this.UI.btnZoomIn.onclick =()=>this._zoomAt(this.canvas.width/2,this.canvas.height/2,1.25);
     this.UI.btnZoomOut.onclick=()=>this._zoomAt(this.canvas.width/2,this.canvas.height/2,0.8);
     this.UI.btnZoomReset.onclick=()=>this._resetView();
-
-    // wheel zoom
     this.canvas.addEventListener('wheel', e=>{
       e.preventDefault();
       const r=this.canvas.getBoundingClientRect(), cx=e.clientX-r.left, cy=e.clientY-r.top;
       this._zoomAt(cx,cy, e.deltaY<0 ? 1.12 : 0.9);
     },{passive:false});
 
-    // pan with Space
-    document.addEventListener('keydown', e=>{ if(e.code==='Space') this.spacePan=true; if(e.key==='Escape'){ this.mode='idle'; this.UI.modeBadge.textContent='โหมด: Idle'; this._hideProbe(); }});
-    document.addEventListener('keyup',   e=>{ if(e.code==='Space') this.spacePan=false; });
+    // pan with Space + drag
+    document.addEventListener('keydown', e=>{
+      if(WiFiApp.activePrefix!==this.p) return;
+      if(e.code==='Space') this.spacePan=true;
+      if(e.key==='Escape'){ this.mode='idle'; this.UI.modeBadge.textContent='โหมด: Idle'; this._hideProbe(); }
+      if(e.key==='s'||e.key==='S'){ this.mode='scale'; this.UI.modeBadge.textContent='โหมด: ตั้งสเกล'; this._hideProbe(); }
+      if(e.key==='a'||e.key==='A'){ this.mode='ap';    this.UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; this._hideProbe(); }
+      if(e.key==='w'||e.key==='W'){ this.mode='mat';   this.UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; this._hideProbe(); }
+      if(e.key==='h'||e.key==='H'){ this.renderHeatmap(); this._hideProbe(); }
+    });
+    document.addEventListener('keyup',   e=>{ if(WiFiApp.activePrefix!==this.p) return; if(e.code==='Space') this.spacePan=false; });
 
     this.canvas.addEventListener('mousedown', e=>{
       const {screen,world}=this._getCanvasPos(e);
@@ -350,7 +343,7 @@ class WiFiApp{
     });
     this.canvas.addEventListener('mouseleave', ()=>{ this.panAnchor=null; this.dragging=false; this.dragStart=null; this.octx.clearRect(0,0,this.overlay.width,this.overlay.height); });
 
-    // toolbar buttons
+    // toolbar
     this.UI.btnScale.onclick=()=>{ this.mode='scale'; this.UI.modeBadge.textContent='โหมด: ตั้งสเกล'; this._hideProbe(); };
     this.UI.btnIdle.onclick =()=>{ this.mode='idle';  this.UI.modeBadge.textContent='โหมด: Idle'; this._hideProbe(); };
     this.UI.btnAP.onclick   =()=>{ this.mode='ap';    this.UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; this._hideProbe(); };
@@ -358,17 +351,18 @@ class WiFiApp{
 
     this.UI.btnAPUndo.onclick =()=>{ this.aps.pop(); this._drawAll(); this._refreshAPList(); };
     this.UI.btnAPClear.onclick=()=>{ if(confirm('ล้าง AP ทั้งหมด?')){ this.aps=[]; this._drawAll(); this._refreshAPList(); } };
+
     this.UI.btnMatUndo.onclick =()=>{ this.segments.pop(); this._drawAll(); this._refreshMatList(); };
     this.UI.btnMatClear.onclick=()=>{ if(confirm('ล้างวัสดุทั้งหมด?')){ this.segments=[]; this._drawAll(); this._refreshMatList(); } };
 
     this.UI.btnRender.onclick =()=>{ this.renderHeatmap(); this._hideProbe(); };
-    this.UI.btnExport.onclick =()=>{ const a=document.createElement('a'); a.download='heatmap.png'; a.href=this.canvas.toDataURL('image/png'); a.click(); };
+    this.UI.btnExport.onclick =()=>{ const a=document.createElement('a'); a.download=`heatmap_${this.p}.png`; a.href=this.canvas.toDataURL('image/png'); a.click(); };
 
     this.UI.btnSave.onclick=()=>{
       const payload={ aps:this.aps, segments:this.segments, alpha:+(this.UI.alpha?.value||0.6), blurPx:+(this.UI.blurPx?.value||16),
         scale:this.scalePxPerMeter, worldW:this.worldW, worldH:this.worldH };
       const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`heatmap_project_${this.p.toLowerCase()}.json`; a.click();
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`heatmap_project_${this.p}.json`; a.click();
       URL.revokeObjectURL(a.href);
     };
     this.UI.loadJson?.addEventListener('change', e=>{
@@ -405,15 +399,6 @@ class WiFiApp{
       img.src=URL.createObjectURL(f);
     });
     this.UI.btnClear.onclick=()=>{ this.floorImg=null; this._resetView(); this._drawAll(); };
-
-    // keyboard
-    document.addEventListener('keydown', e=>{
-      if(e.key==='s'||e.key==='S'){ this.mode='scale'; this.UI.modeBadge.textContent='โหมด: ตั้งสเกล'; this._hideProbe(); }
-      if(e.key==='a'||e.key==='A'){ this.mode='ap';    this.UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; this._hideProbe(); }
-      if(e.key==='w'||e.key==='W'){ this.mode='mat';   this.UI.modeBadge.textContent='โหมด: วัสดุ (ลากเส้น)'; this._hideProbe(); }
-      if(e.key==='h'||e.key==='H'){ this.renderHeatmap(); this._hideProbe(); }
-      if(e.key==='Escape'){ this.mode='idle'; this.UI.modeBadge.textContent='โหมด: Idle'; this._hideProbe(); }
-    });
 
     // canvas click: place AP / probe
     this.canvas.addEventListener('click', e=>{
@@ -539,8 +524,27 @@ class WiFiApp{
       window.__currentApPreset={name};
     });
   }
+
+  _showProbeAtScreen(sx,sy,wx,wy){
+    this._drawAll();
+    const ctx=this.ctx;
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+    ctx.beginPath(); ctx.arc(sx,sy,6,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.globalAlpha=.9; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.globalAlpha=1; ctx.stroke(); ctx.restore();
+
+    const rssi=this._rssiFromAPs(wx,wy), col=this._colorFromRSSI(rssi);
+    this.UI.probeVal.textContent=`${rssi.toFixed(1)} dBm`; this.UI.probeMeta.textContent=`x=${wx|0}, y=${wy|0}`;
+    this.UI.probe.style.left=`${sx+10}px`; this.UI.probe.style.top=`${sy-10}px`; this.UI.probe.style.display='block';
+    this.UI.probeSw.style.background = rgbStr(col);
+  }
+  _hideProbe(){ this.UI.probe.style.display='none'; }
 }
 
-/* ===== สร้างอินสแตนซ์สองตัว แยกกัน แต่หน้าตาเหมือนกัน 100% ===== */
-const AppPlanning = new WiFiApp('Planning');
-const AppSurvey   = new WiFiApp('Survey');
+/* ===== สร้าง 2 อินสแตนซ์ (แยกสเตตอิสระ) ===== */
+const Plan1 = new WiFiApp('P1');
+const Plan2 = new WiFiApp('P2');
+
+/* ===== ให้ index.html เรียกเพื่อสลับแท็บ (คีย์ลัดทำงานกับแท็บที่เปิดอยู่) ===== */
+window.setActiveApp = (prefix)=> WiFiApp.setActive(prefix);
+// ตั้งค่าแรกเริ่ม
+WiFiApp.setActive('P1');
