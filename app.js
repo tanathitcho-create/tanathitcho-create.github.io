@@ -2,6 +2,7 @@
    Planning x2 (Plan 1 / 2)
    ========================= */
 
+/* ===== Materials (per-band attenuation) ===== */
 const MATERIALS={
   drywall:{name:'ผนังยิปซัม (Drywall)',color:'#98c1ff',att:{'2.4':3,'5':4}},
   glass:{name:'กระจก',color:'#7de1ff',att:{'2.4':4,'5':6}},
@@ -12,18 +13,21 @@ const MATERIALS={
   human:{name:'ร่างกายคน (เฉลี่ย)',color:'#d6b3ff',att:{'2.4':3,'5':4}},
 };
 
+/* ===== Constants ===== */
 const RSSI_MIN=-80, RSSI_MAX=-50;
 const P_GRAY=-67, P_YELLOW=-60, P_GREEN=-30;
 const GRAY_BASE=[128,128,128], GRAY_LIGHT=[220,220,220];
 const N_BY_BAND={'2.4':2.2,'5':2.5};
 const CONTOUR_LEVELS=[-20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70,-75,-80];
 
+/* ===== Helpers ===== */
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const mix=(c1,c2,t)=>[Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
 const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
+/* ===== Main Class ===== */
 class WiFiApp{
   static activePrefix='P1'; // สำหรับคีย์ลัดให้ทำงานกับแท็บที่เปิดอยู่
   static setActive(prefix){ WiFiApp.activePrefix=prefix; }
@@ -31,12 +35,14 @@ class WiFiApp{
   constructor(prefix){
     this.p=prefix;
 
+    /* ===== Canvas / Overlay / Stage ===== */
     this.canvas = $(`#canvas${this.p}`);
     this.ctx    = this.canvas.getContext('2d',{willReadFrequently:true});
     this.overlay= $(`#overlay${this.p}`);
     this.octx   = this.overlay.getContext('2d',{willReadFrequently:true});
     this.stage  = $(`#stage${this.p}`);
 
+    /* ===== UI refs ===== */
     this.UI = {
       modeBadge: $(`#modeBadge${this.p}`),
       scaleLabel: $(`#scaleLabel${this.p}`),
@@ -77,7 +83,7 @@ class WiFiApp{
       btnUsePreset:$(`#btnUsePreset${this.p}`),
     };
 
-    // state
+    /* ===== State ===== */
     this.worldW=this.canvas.width; this.worldH=this.canvas.height;
     this.view={ scale:1, tx:0, ty:0, min:0.2, max:6 };
     this.floorImg=null;
@@ -91,10 +97,11 @@ class WiFiApp{
     this.buildingHeat=false;
     this.AP_PRESETS={}; window.__currentApPreset=null;
 
-    // ensure overlay size = canvas size (in case CSS scales)
+    /* ===== Overlay autosize ===== */
     const fitOverlay=()=>{ this.overlay.width=this.canvas.width; this.overlay.height=this.canvas.height; };
     fitOverlay(); window.addEventListener('resize', fitOverlay);
 
+    /* ===== Init ===== */
     this._wireUI();
     this._initMatDrop();
     this._resetView();
@@ -103,7 +110,9 @@ class WiFiApp{
     this._loadApPresets();
   }
 
-  /* ===== helpers & render ===== */
+  /* =========================
+     Render helpers
+     ========================= */
   _setView(s,tx,ty){ this.view.scale=clamp(s,this.view.min,this.view.max); this.view.tx=tx; this.view.ty=ty; this._drawAll(); }
   _resetView(){
     const pad=20, sx=(this.canvas.width-2*pad)/this.worldW, sy=(this.canvas.height-2*pad)/this.worldH, s=Math.min(sx,sy);
@@ -134,6 +143,7 @@ class WiFiApp{
     ctx.restore();
     this._hideProbe();
   }
+
   _drawPermanent(){
     const ctx=this.ctx;
     ctx.save(); ctx.setTransform(this.view.scale,0,0,this.view.scale,this.view.tx,this.view.ty);
@@ -164,6 +174,7 @@ class WiFiApp{
     });
     ctx.restore();
   }
+
   _drawContours(levels, step=2){
     if(!this.heatField) return;
     const ctx=this.ctx;
@@ -198,6 +209,7 @@ class WiFiApp{
     }
     ctx.restore();
   }
+
   _drawAll(){
     this.UI.legendMin.textContent=RSSI_MIN; this.UI.legendMax.textContent=RSSI_MAX;
     this._drawBase();
@@ -229,6 +241,9 @@ class WiFiApp{
     g.style.backgroundImage=`url(${cvs.toDataURL()})`;
   }
 
+  /* =========================
+     Physics
+     ========================= */
   _pathObstacleLoss(pFrom,pTo,band){
     let loss=0;
     const orient=(a,b,c)=> (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
@@ -302,9 +317,11 @@ class WiFiApp{
     this.hasRendered=true;
   }
 
-  /* ===== UI binding ===== */
+  /* =========================
+     UI & Events
+     ========================= */
   _wireUI(){
-    // zoom
+    /* Zoom */
     this.UI.btnZoomIn.onclick =()=>this._zoomAt(this.canvas.width/2,this.canvas.height/2,1.25);
     this.UI.btnZoomOut.onclick=()=>this._zoomAt(this.canvas.width/2,this.canvas.height/2,0.8);
     this.UI.btnZoomReset.onclick=()=>this._resetView();
@@ -314,7 +331,7 @@ class WiFiApp{
       this._zoomAt(cx,cy, e.deltaY<0 ? 1.12 : 0.9);
     },{passive:false});
 
-    // pan with Space + drag
+    /* Keyboard (เฉพาะแท็บที่ active) */
     document.addEventListener('keydown', e=>{
       if(WiFiApp.activePrefix!==this.p) return;
       if(e.code==='Space') this.spacePan=true;
@@ -326,6 +343,7 @@ class WiFiApp{
     });
     document.addEventListener('keyup',   e=>{ if(WiFiApp.activePrefix!==this.p) return; if(e.code==='Space') this.spacePan=false; });
 
+    /* Pan + Drag modes */
     this.canvas.addEventListener('mousedown', e=>{
       const {screen,world}=this._getCanvasPos(e);
       if(this.spacePan||e.button===1){ this.panAnchor={ x:screen.x, y:screen.y, tx:this.view.tx, ty:this.view.ty }; return; }
@@ -343,7 +361,7 @@ class WiFiApp{
     });
     this.canvas.addEventListener('mouseleave', ()=>{ this.panAnchor=null; this.dragging=false; this.dragStart=null; this.octx.clearRect(0,0,this.overlay.width,this.overlay.height); });
 
-    // toolbar
+    /* Toolbar */
     this.UI.btnScale.onclick=()=>{ this.mode='scale'; this.UI.modeBadge.textContent='โหมด: ตั้งสเกล'; this._hideProbe(); };
     this.UI.btnIdle.onclick =()=>{ this.mode='idle';  this.UI.modeBadge.textContent='โหมด: Idle'; this._hideProbe(); };
     this.UI.btnAP.onclick   =()=>{ this.mode='ap';    this.UI.modeBadge.textContent='โหมด: วาง AP (คลิก)'; this._hideProbe(); };
@@ -358,6 +376,7 @@ class WiFiApp{
     this.UI.btnRender.onclick =()=>{ this.renderHeatmap(); this._hideProbe(); };
     this.UI.btnExport.onclick =()=>{ const a=document.createElement('a'); a.download=`heatmap_${this.p}.png`; a.href=this.canvas.toDataURL('image/png'); a.click(); };
 
+    /* Save / Load JSON */
     this.UI.btnSave.onclick=()=>{
       const payload={ aps:this.aps, segments:this.segments, alpha:+(this.UI.alpha?.value||0.6), blurPx:+(this.UI.blurPx?.value||16),
         scale:this.scalePxPerMeter, worldW:this.worldW, worldH:this.worldH };
@@ -365,6 +384,7 @@ class WiFiApp{
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`heatmap_project_${this.p}.json`; a.click();
       URL.revokeObjectURL(a.href);
     };
+
     this.UI.loadJson?.addEventListener('change', e=>{
       const f=e.target.files[0]; if(!f) return;
       const reader=new FileReader();
@@ -391,24 +411,71 @@ class WiFiApp{
       reader.readAsText(f);
     });
 
-    // image loader
-    this.UI.fileInput?.addEventListener('change', e=>{
-      const f=e.target.files[0]; if(!f) return;
-      const img=new Image();
-      img.onload=()=>{ this.floorImg=img; this.worldW=img.naturalWidth; this.worldH=img.naturalHeight; this._resetView(); this._drawAll(); };
-      img.src=URL.createObjectURL(f);
+    /* Image loader — robust (PNG/JPG/WebP) + warn HEIC */
+    this.UI.fileInput?.addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0];
+      if(!f) return;
+
+      const okTypes = ['image/png','image/jpeg','image/webp'];
+      const ext = (f.name||'').toLowerCase();
+      if(!okTypes.includes(f.type)) {
+        if(ext.endsWith('.heic')||ext.endsWith('.heif')) {
+          alert('ไฟล์นี้เป็น HEIC/HEIF — เบราว์เซอร์บางตัวอ่านไม่ได้ แนะนำแปลงเป็น PNG/JPG ก่อน');
+        } else {
+          alert('ชนิดไฟล์อาจไม่รองรับ แนะนำ PNG/JPG/WebP');
+        }
+      }
+
+      // Try createImageBitmap first (respect EXIF orientation)
+      try {
+        const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
+        const t = document.createElement('canvas');
+        t.width = bmp.width; t.height = bmp.height;
+        const tctx = t.getContext('2d');
+        tctx.drawImage(bmp, 0, 0);
+        const img = new Image();
+        img.onload = () => {
+          this.floorImg = img;
+          this.worldW = img.naturalWidth;
+          this.worldH = img.naturalHeight;
+          this._resetView();
+          this._drawAll();
+        };
+        img.onerror = () => alert('โหลดรูปไม่สำเร็จ (decode ล้มเหลว)');
+        img.src = t.toDataURL('image/png');
+        return;
+      } catch(e1) {
+        // fallback to ObjectURL path below
+      }
+
+      const url = URL.createObjectURL(f);
+      const img = new Image();
+      img.onload = () => {
+        this.floorImg = img;
+        this.worldW = img.naturalWidth;
+        this.worldH = img.naturalHeight;
+        this._resetView();
+        this._drawAll();
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () => {
+        alert('โหลดรูปไม่สำเร็จ — ลองแปลงเป็น PNG/JPG/WebP');
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
     });
+
     this.UI.btnClear.onclick=()=>{ this.floorImg=null; this._resetView(); this._drawAll(); };
 
-    // canvas click: place AP / probe
+    /* Canvas click: place AP / probe */
     this.canvas.addEventListener('click', e=>{
       if(this.panAnchor) return;
       const {world,screen}=this._getCanvasPos(e);
       if(this.mode==='ap'){
         if(!this.scalePxPerMeter){ this.scalePxPerMeter=100; this.UI.scaleLabel.textContent='100 px/เมตร (อัตโนมัติ)'; }
-        const label=this.UI.apLabel.value.trim()||`AP-${this.aps.length+1}`;
-        const p0=parseFloat(this.UI.apP0.value||'-40');
-        const band=this.UI.apBand.value||'5';
+        const label=(this.UI.apLabel?.value||'').trim()||`AP-${this.aps.length+1}`;
+        const p0=parseFloat(this.UI.apP0?.value||'-40');
+        const band=this.UI.apBand?.value||'5';
         const preset=window.__currentApPreset?{presetName:window.__currentApPreset.name}:undefined;
         this.aps.push({x:world.x,y:world.y,label,p0,band,preset});
         this._drawAll(); this._refreshAPList();
@@ -546,5 +613,4 @@ const Plan2 = new WiFiApp('P2');
 
 /* ===== ให้ index.html เรียกเพื่อสลับแท็บ (คีย์ลัดทำงานกับแท็บที่เปิดอยู่) ===== */
 window.setActiveApp = (prefix)=> WiFiApp.setActive(prefix);
-// ตั้งค่าแรกเริ่ม
 WiFiApp.setActive('P1');
