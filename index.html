@@ -41,6 +41,7 @@
   .small{font-size:12px}
   .apRow,.matRow{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#141a34;border:1px solid #2a3156;border-radius:10px;padding:6px 8px}
   .dot{width:10px;height:10px;border-radius:50%}
+  .zoombar{display:flex;gap:6px}
   @media (max-width:980px){ .container{grid-template-columns:1fr} }
 
   .stage{position:relative;display:inline-block;overflow:hidden;border-radius:12px;border:1px solid #242a49}
@@ -53,8 +54,6 @@
          box-shadow:0 6px 20px rgba(0,0,0,.35)}
   .probe .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid #0006}
   .probe .sub{font-weight:500;color:#9aa4b2;margin-top:2px}
-
-  .zoombar{display:flex;gap:6px}
 </style>
 </head>
 <body>
@@ -70,7 +69,7 @@
 <div class="container active" id="appP1">
   <aside class="panel">
     <div class="section">
-      <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG)</div>
+      <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG/WebP)</div>
       <div class="row">
         <input type="file" id="fileInputP1" accept="image/*"/>
         <button id="btnClearP1">ล้าง</button>
@@ -205,7 +204,7 @@
 <div class="container" id="appP2">
   <aside class="panel">
     <div class="section">
-      <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG)</div>
+      <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG/WebP)</div>
       <div class="row">
         <input type="file" id="fileInputP2" accept="image/*"/>
         <button id="btnClearP2">ล้าง</button>
@@ -255,7 +254,7 @@
           <select id="apBandP2"><option value="2.4">2.4 GHz</option><option value="5" selected>5 GHz</option></select>
         </div>
       </div>
-      <div class="row" style="margin-top:8px">
+      <div class="row" style="margin-top:8px)">
         <button id="btnAPP2">📡 โหมดวาง AP (คลิก)</button>
         <button id="btnAPUndoP2" class="ghost">↩️ ลบ AP ล่าสุด</button>
         <button id="btnAPClearP2" class="danger">🗑️ ล้าง AP ทั้งหมด</button>
@@ -346,17 +345,18 @@
     if(which==='P1'){
       pillP1.classList.add('active'); pillP2.classList.remove('active');
       appP1.classList.add('active'); appP2.classList.remove('active');
-      window.setActiveApp('P1');
+      window.setActiveApp && window.setActiveApp('P1');
     }else{
       pillP2.classList.add('active'); pillP1.classList.remove('active');
       appP2.classList.add('active'); appP1.classList.remove('active');
-      window.setActiveApp('P2');
+      window.setActiveApp && window.setActiveApp('P2');
     }
   }
   pillP1.onclick=()=>setTab('P1');
   pillP2.onclick=()=>setTab('P2');
 </script>
 
+<!-- โหลดสคริปต์หลัก -->
 <script src="./app.js"></script>
 </body>
 </html>
