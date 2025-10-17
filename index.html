@@ -53,6 +53,8 @@
          box-shadow:0 6px 20px rgba(0,0,0,.35)}
   .probe .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid #0006}
   .probe .sub{font-weight:500;color:#9aa4b2;margin-top:2px}
+
+  .zoombar{display:flex;gap:6px}
 </style>
 </head>
 <body>
@@ -74,7 +76,7 @@
         <button id="btnClearP1">ล้าง</button>
       </div>
       <div class="row" style="margin-top:6px;justify-content:space-between">
-        <div class="small muted">ใช้ล้อเมาส์ซูม • Space+ลาก = แพน • รีเซ็ตวิว</div>
+        <div class="small muted">ล้อเมาส์ซูม • Space+ลาก = แพน • รีเซ็ตวิว</div>
         <div class="zoombar">
           <button id="btnZoomOutP1">−</button>
           <button id="btnZoomResetP1">100%</button>
@@ -99,7 +101,7 @@
         <select id="apPresetP1" style="min-width:220px"><option value="">(กำลังโหลดพรีเซ็ต...)</option></select>
         <button id="btnUsePresetP1">ใช้พรีเซ็ต</button>
       </div>
-      <div class="small muted">ไฟล์ <code>ap_presets.json</code> ที่โฟลเดอร์เดียวกับหน้านี้</div>
+      <div class="small muted">ไฟล์ <code>ap_presets.json</code> ต้องอยู่โฟลเดอร์เดียวกัน</div>
     </div>
 
     <div class="section">
@@ -199,7 +201,7 @@
   </main>
 </div>
 
-<!-- ─────────────── PLAN 2 (ก็อปเหมือนกันทุกอย่าง) ─────────────── -->
+<!-- ─────────────── PLAN 2 ─────────────── -->
 <div class="container" id="appP2">
   <aside class="panel">
     <div class="section">
@@ -209,7 +211,7 @@
         <button id="btnClearP2">ล้าง</button>
       </div>
       <div class="row" style="margin-top:6px;justify-content:space-between">
-        <div class="small muted">ใช้ล้อเมาส์ซูม • Space+ลาก = แพน • รีเซ็ตวิว</div>
+        <div class="small muted">ล้อเมาส์ซูม • Space+ลาก = แพน • รีเซ็ตวิว</div>
         <div class="zoombar">
           <button id="btnZoomOutP2">−</button>
           <button id="btnZoomResetP2">100%</button>
@@ -234,7 +236,7 @@
         <select id="apPresetP2" style="min-width:220px"><option value="">(กำลังโหลดพรีเซ็ต...)</option></select>
         <button id="btnUsePresetP2">ใช้พรีเซ็ต</button>
       </div>
-      <div class="small muted">ไฟล์ <code>ap_presets.json</code> ที่โฟลเดอร์เดียวกับหน้านี้</div>
+      <div class="small muted">ไฟล์ <code>ap_presets.json</code> ต้องอยู่โฟลเดอร์เดียวกัน</div>
     </div>
 
     <div class="section">
