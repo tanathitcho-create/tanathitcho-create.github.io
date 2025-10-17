@@ -29,7 +29,7 @@ const rgbStr=([r,g,b])=>`rgb(${r},${g},${b})`;
 
 /* ===== Main Class ===== */
 class WiFiApp{
-  static activePrefix='P1'; // สำหรับคีย์ลัดให้ทำงานกับแท็บที่เปิดอยู่
+  static activePrefix='P1';
   static setActive(prefix){ WiFiApp.activePrefix=prefix; }
 
   constructor(prefix){
@@ -139,7 +139,9 @@ class WiFiApp{
       ctx.strokeStyle='#1c264a'; ctx.lineWidth=1/this.view.scale;
       for(let x=0;x<this.worldW;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,this.worldH);ctx.stroke()}
       for(let y=0;y<this.worldH;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(this.worldW,y);ctx.stroke()}
-    }else ctx.drawImage(this.floorImg,0,0,this.worldW,this.worldH);
+    }else{
+      ctx.drawImage(this.floorImg,0,0,this.worldW,this.worldH);
+    }
     ctx.restore();
     this._hideProbe();
   }
@@ -411,58 +413,73 @@ class WiFiApp{
       reader.readAsText(f);
     });
 
-    /* Image loader — robust (PNG/JPG/WebP) + warn HEIC */
+    /* ========= Image loader — robust (PNG/JPG/WebP) + block HEIC ========= */
     this.UI.fileInput?.addEventListener('change', async (e)=>{
       const f = e.target.files?.[0];
       if(!f) return;
 
-      const okTypes = ['image/png','image/jpeg','image/webp'];
       const ext = (f.name||'').toLowerCase();
-      if(!okTypes.includes(f.type)) {
-        if(ext.endsWith('.heic')||ext.endsWith('.heif')) {
-          alert('ไฟล์นี้เป็น HEIC/HEIF — เบราว์เซอร์บางตัวอ่านไม่ได้ แนะนำแปลงเป็น PNG/JPG ก่อน');
-        } else {
-          alert('ชนิดไฟล์อาจไม่รองรับ แนะนำ PNG/JPG/WebP');
+      const looksHEIC = /(\.heic|\.heif)$/.test(ext) || /heic|heif/i.test(f.type);
+      if(looksHEIC){
+        alert('ไฟล์นี้เป็น HEIC/HEIF — เบราว์เซอร์ส่วนใหญ่เปิดไม่ได้ กรุณาแปลงเป็น PNG/JPG หรือถ่ายภาพหน้าจอมาแทน');
+        return;
+      }
+
+      // 1) เส้นทางหลัก: createImageBitmap -> วาดลง offscreen canvas (ไม่ใช้ DataURL)
+      if ('createImageBitmap' in window) {
+        try {
+          const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
+          const off = document.createElement('canvas');
+          off.width = bmp.width; off.height = bmp.height;
+          off.getContext('2d').drawImage(bmp, 0, 0);
+          try { bmp.close && bmp.close(); } catch {}
+          this.floorImg = off;                // ใช้ canvas เป็นภาพพื้นหลังโดยตรง
+          this.worldW  = off.width;
+          this.worldH  = off.height;
+          this._resetView();
+          this._drawAll();
+          return;
+        } catch (e1) {
+          console.warn('createImageBitmap failed, fallback to Blob URL', e1);
         }
       }
 
-      // Try createImageBitmap first (respect EXIF orientation)
+      // 2) Fallback: Blob URL → <img>
       try {
-        const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
-        const t = document.createElement('canvas');
-        t.width = bmp.width; t.height = bmp.height;
-        const tctx = t.getContext('2d');
-        tctx.drawImage(bmp, 0, 0);
+        const url = URL.createObjectURL(f);
         const img = new Image();
         img.onload = () => {
           this.floorImg = img;
-          this.worldW = img.naturalWidth;
-          this.worldH = img.naturalHeight;
+          this.worldW   = img.naturalWidth;
+          this.worldH   = img.naturalHeight;
           this._resetView();
           this._drawAll();
+          URL.revokeObjectURL(url);
         };
-        img.onerror = () => alert('โหลดรูปไม่สำเร็จ (decode ล้มเหลว)');
-        img.src = t.toDataURL('image/png');
-        return;
-      } catch(e1) {
-        // fallback to ObjectURL path below
-      }
-
-      const url = URL.createObjectURL(f);
-      const img = new Image();
-      img.onload = () => {
-        this.floorImg = img;
-        this.worldW = img.naturalWidth;
-        this.worldH = img.naturalHeight;
-        this._resetView();
-        this._drawAll();
-        URL.revokeObjectURL(url);
-      };
-      img.onerror = () => {
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          // 3) Last resort: FileReader DataURL
+          const r = new FileReader();
+          r.onload = () => {
+            const im2 = new Image();
+            im2.onload = () => {
+              this.floorImg = im2;
+              this.worldW   = im2.naturalWidth;
+              this.worldH   = im2.naturalHeight;
+              this._resetView();
+              this._drawAll();
+            };
+            im2.onerror = () => alert('โหลดรูปไม่สำเร็จ — ลองแปลงเป็น PNG/JPG/WebP');
+            im2.src = r.result;
+          };
+          r.onerror = () => alert('โหลดรูปไม่สำเร็จ — ลองแปลงเป็น PNG/JPG/WebP');
+          r.readAsDataURL(f);
+        };
+        img.src = url;
+      } catch (e2) {
+        console.error(e2);
         alert('โหลดรูปไม่สำเร็จ — ลองแปลงเป็น PNG/JPG/WebP');
-        URL.revokeObjectURL(url);
-      };
-      img.src = url;
+      }
     });
 
     this.UI.btnClear.onclick=()=>{ this.floorImg=null; this._resetView(); this._drawAll(); };
