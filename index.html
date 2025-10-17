@@ -69,7 +69,7 @@
 <div class="container active" id="appP1">
   <aside class="panel">
     <div class="section">
-      <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG/WebP)</div>
+      <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG)</div>
       <div class="row">
         <input type="file" id="fileInputP1" accept="image/*"/>
         <button id="btnClearP1">ล้าง</button>
@@ -140,7 +140,7 @@
           <input type="number" id="matAttP1" value="8" step="0.5"/>
         </div>
       </div>
-      <div class="row" style="margin-top:8px">
+      <div class="row" style="margin-top:8px)">
         <button id="btnMatP1">🧱 โหมดวัสดุ (กดค้าง–ลาก–ปล่อย)</button>
         <button id="btnMatUndoP1" class="ghost">↩️ ลบเส้นล่าสุด</button>
         <button id="btnMatClearP1" class="danger">🗑️ ล้างวัสดุทั้งหมด</button>
@@ -204,7 +204,7 @@
 <div class="container" id="appP2">
   <aside class="panel">
     <div class="section">
-      <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG/WebP)</div>
+      <div class="label">1) อัปโหลดแปลนพื้นที่ (PNG/JPG)</div>
       <div class="row">
         <input type="file" id="fileInputP2" accept="image/*"/>
         <button id="btnClearP2">ล้าง</button>
@@ -254,7 +254,7 @@
           <select id="apBandP2"><option value="2.4">2.4 GHz</option><option value="5" selected>5 GHz</option></select>
         </div>
       </div>
-      <div class="row" style="margin-top:8px)">
+      <div class="row" style="margin-top:8px">
         <button id="btnAPP2">📡 โหมดวาง AP (คลิก)</button>
         <button id="btnAPUndoP2" class="ghost">↩️ ลบ AP ล่าสุด</button>
         <button id="btnAPClearP2" class="danger">🗑️ ล้าง AP ทั้งหมด</button>
@@ -345,18 +345,17 @@
     if(which==='P1'){
       pillP1.classList.add('active'); pillP2.classList.remove('active');
       appP1.classList.add('active'); appP2.classList.remove('active');
-      window.setActiveApp && window.setActiveApp('P1');
+      window.setActiveApp('P1');
     }else{
       pillP2.classList.add('active'); pillP1.classList.remove('active');
       appP2.classList.add('active'); appP1.classList.remove('active');
-      window.setActiveApp && window.setActiveApp('P2');
+      window.setActiveApp('P2');
     }
   }
   pillP1.onclick=()=>setTab('P1');
   pillP2.onclick=()=>setTab('P2');
 </script>
 
-<!-- โหลดสคริปต์หลัก -->
 <script src="./app.js"></script>
 </body>
 </html>
